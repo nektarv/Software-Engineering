@@ -72,9 +72,7 @@ CREATE TABLE IF NOT EXISTS `charging_database`.`outlet` (
   `outletid` INT NOT NULL AUTO_INCREMENT,
   `connector` VARCHAR(45) NULL,
   `power` INT NULL,
-  `state` VARCHAR(45) NULL DEFAULT 'offline',
-  `prevstate` VARCHAR(45) NULL,
-  `timeofchange` DATETIME NULL,
+  `state` ENUM('available', 'charging', 'reserved', 'malfunction', 'offline') NULL DEFAULT 'offline',
   `is_fast` TINYINT NOT NULL DEFAULT 0,
   `markup` FLOAT NOT NULL DEFAULT 1,
   `stationid` INT NOT NULL,
@@ -112,6 +110,38 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
+-- Table `charging_database`.`session`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `charging_database`.`session` ;
+
+CREATE TABLE IF NOT EXISTS `charging_database`.`session` (
+  `sessionid` INT NOT NULL AUTO_INCREMENT,
+  `starttime` DATETIME NULL,
+  `endtime` DATETIME NULL,
+  `startsoc` INT NULL DEFAULT 0,
+  `endsoc` INT NULL DEFAULT 100,
+  `totalkwh` FLOAT NULL,
+  `kwprice` FLOAT NULL,
+  `amount` FLOAT NULL,
+  `reservationid` INT NULL,
+  `pointid` INT NOT NULL,
+  PRIMARY KEY (`sessionid`),
+  INDEX `session_outlet_idx` (`pointid` ASC) VISIBLE,
+  INDEX `session_reservation_idx` (`reservationid` ASC) VISIBLE,
+  CONSTRAINT `session_outlet`
+    FOREIGN KEY (`pointid`)
+    REFERENCES `charging_database`.`outlet` (`outletid`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `session_reservation`
+    FOREIGN KEY (`reservationid`)
+    REFERENCES `charging_database`.`reservation` (`reservationid`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
 -- Table `charging_database`.`reservation`
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `charging_database`.`reservation` ;
@@ -122,20 +152,13 @@ CREATE TABLE IF NOT EXISTS `charging_database`.`reservation` (
   `reservationtime` DATETIME NOT NULL,
   `reservationexpiry` DATETIME NOT NULL,
   `has_charged` TINYINT NOT NULL DEFAULT 0,
-  `reservationcol1` VARCHAR(45) NULL,
-  `reservationcol` VARCHAR(45) NULL,
-  `starttime` DATETIME NULL,
-  `endtime` DATETIME NULL,
-  `startsoc` INT NULL DEFAULT 0,
-  `endsoc` INT NULL DEFAULT 100,
-  `totalkwh` FLOAT NULL,
-  `kwprice` FLOAT NULL,
-  `amount` FLOAT NULL,
   `userid` INT NULL,
   `pointid` INT NOT NULL,
+  `sessionid` INT NULL,
   PRIMARY KEY (`reservationid`),
   INDEX `user_reserved_idx` (`userid` ASC) VISIBLE,
   INDEX `station_reserved_idx` (`pointid` ASC) VISIBLE,
+  INDEX `reservation_session_idx` (`sessionid` ASC) VISIBLE,
   CONSTRAINT `user_reserved`
     FOREIGN KEY (`userid`)
     REFERENCES `charging_database`.`user` (`userid`)
@@ -144,6 +167,32 @@ CREATE TABLE IF NOT EXISTS `charging_database`.`reservation` (
   CONSTRAINT `station_reserved`
     FOREIGN KEY (`pointid`)
     REFERENCES `charging_database`.`station` (`stationid`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `reservation_session`
+    FOREIGN KEY (`sessionid`)
+    REFERENCES `charging_database`.`session` (`sessionid`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `charging_database`.`update`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `charging_database`.`update` ;
+
+CREATE TABLE IF NOT EXISTS `charging_database`.`update` (
+  `update_id` INT NOT NULL AUTO_INCREMENT,
+  `outletid` INT NOT NULL,
+  `old_state` ENUM('available', 'charging', 'reserved', 'malfunction', 'offline') NOT NULL,
+  `new_state` ENUM('available', 'charging', 'reserved', 'malfunction', 'offline') NOT NULL,
+  `timeref` DATETIME NULL,
+  PRIMARY KEY (`update_id`),
+  INDEX `outletupdate_idx` (`outletid` ASC) VISIBLE,
+  CONSTRAINT `outletupdate`
+    FOREIGN KEY (`outletid`)
+    REFERENCES `charging_database`.`outlet` (`outletid`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
