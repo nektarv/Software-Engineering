@@ -213,3 +213,27 @@ ENGINE = InnoDB;
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
+
+DELIMITER $$
+
+CREATE TRIGGER `outlet_state_update_trigger`
+AFTER UPDATE ON `charging_database`.`outlet`
+FOR EACH ROW
+BEGIN
+    -- Only log changes to the 'state' column
+    IF NOT (OLD.state <=> NEW.state) THEN
+        INSERT INTO `charging_database`.`updates` (
+            `outletid`,
+            `old_state`,
+            `new_state`,
+            `timeref`
+        ) VALUES (
+            NEW.outletid,
+            OLD.state,
+            NEW.state,
+            NOW()
+        );
+    END IF;
+END$$
+
+DELIMITER ;
