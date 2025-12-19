@@ -123,19 +123,12 @@ CREATE TABLE IF NOT EXISTS `charging_database`.`session` (
   `totalkwh` FLOAT NULL,
   `kwprice` FLOAT NULL,
   `amount` FLOAT NULL,
-  `reservationid` INT NULL,
   `pointid` INT NOT NULL,
   PRIMARY KEY (`sessionid`),
   INDEX `session_outlet_idx` (`pointid` ASC) VISIBLE,
-  INDEX `session_reservation_idx` (`reservationid` ASC) VISIBLE,
   CONSTRAINT `session_outlet`
     FOREIGN KEY (`pointid`)
     REFERENCES `charging_database`.`outlet` (`outletid`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `session_reservation`
-    FOREIGN KEY (`reservationid`)
-    REFERENCES `charging_database`.`reservation` (`reservationid`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
@@ -159,6 +152,7 @@ CREATE TABLE IF NOT EXISTS `charging_database`.`reservation` (
   INDEX `user_reserved_idx` (`userid` ASC) VISIBLE,
   INDEX `station_reserved_idx` (`pointid` ASC) VISIBLE,
   INDEX `reservation_session_idx` (`sessionid` ASC) VISIBLE,
+  UNIQUE INDEX `sessionid_UNIQUE` (`sessionid` ASC) VISIBLE,
   CONSTRAINT `user_reserved`
     FOREIGN KEY (`userid`)
     REFERENCES `charging_database`.`user` (`userid`)
