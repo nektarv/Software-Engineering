@@ -47,7 +47,7 @@ def random_longitude():
 # -------------------------
 for _ in range(N_USERS):
     print(
-        "INSERT INTO user (username, password) "
+        "INSERT INTO users (username, password) "
         f"VALUES ('{random_username()}', '{random_password()}');"
     )
 
@@ -133,14 +133,14 @@ for session_id in range(1, N_SESSIONS + 1):
     endtime = starttime + timedelta(minutes=duration_minutes)
     
     startsoc = random.randint(0, 50)
-    endsoc = random.randint(startsoc, 100)
+    endsoc = random.randint(startsoc+1, 100)
     totalkwh = round(random.uniform(5, 50), 2)
     kwprice = round(random.uniform(0.2, 0.5), 2)
     amount = round(totalkwh * kwprice, 2)
     
     print(
-        "INSERT INTO session (starttime, endtime, startsoc, endsoc, totalkwh, kwprice, amount, reservationid, pointid) "
-        f"VALUES ('{starttime}', '{endtime}', {startsoc}, {endsoc}, {totalkwh}, {kwprice}, {amount}, NULL, {point_id});"
+        "INSERT INTO sessions (starttime, endtime, startsoc, endsoc, totalkwh, kwprice, amount, pointid) "
+        f"VALUES ('{starttime}', '{endtime}', {startsoc}, {endsoc}, {totalkwh}, {kwprice}, {amount}, {point_id});"
     )
   
 print()
@@ -148,6 +148,7 @@ print()
 # -------------------------
 # RESERVATION INSERTS
 # -------------------------
+N_successful_charges=0
 
 for reservation_id in range(1, N_RESERVATIONS + 1):
     user_id = random.randint(1, N_USERS)
@@ -159,12 +160,22 @@ for reservation_id in range(1, N_RESERVATIONS + 1):
     random_minute = random.randint(0, 59)
     reservationexpiry = datetime.combine(date, datetime.min.time()) + timedelta(hours=random_hour, minutes=random_minute)
     starttime = reservationexpiry - timedelta(minutes=duration) ##???
-    
-    has_charged = random.randint(0, 1)
+
+    has_charged = 0
+    session_id = None
+
+    if N_successful_charges < N_SESSIONS:
+      if random.random() < 0.7:
+          has_charged = 1
+          session_id = N_successful_charges + 1
+          N_successful_charges += 1
+
+    # Convert None → SQL NULL
+    session_val = "NULL" if session_id is None else session_id
 
     print(
-        "INSERT INTO reservation (date, reservationtime, reservationexpiry, has_charged, userid, pointid) "
-        f"VALUES ('{date}', '{starttime}', '{reservationexpiry}', {has_charged}, {user_id}, {station_id});"
+        "INSERT INTO reservation (date, reservationtime, reservationexpiry, has_charged, userid, pointid, sessionid) "
+        f"VALUES ('{date}', '{starttime}', '{reservationexpiry}', {has_charged}, {user_id}, {station_id}, {session_val});"
     )
 
 print()
@@ -183,6 +194,6 @@ for _ in range(N_UPDATES):
     timeref = fake.date_time_between(start_date='-30d', end_date='now')
     
     print(
-        "INSERT INTO `update` (outletid, old_state, new_state, timeref) "
+        "INSERT INTO `updates` (outletid, old_state, new_state, timeref) "
         f"VALUES ({outlet_id}, '{old_state}', '{new_state}', '{timeref}');"
     )
