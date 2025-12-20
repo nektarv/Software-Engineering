@@ -126,7 +126,7 @@ print()
 
 for session_id in range(1, N_SESSIONS + 1):
     reservation_id = session_id  
-    point_id = random.randint(1, N_STATIONS)  
+    point_id = random.randint(1, N_OUTLETS)  
     
     starttime = fake.date_time_between(start_date='-30d', end_date='now')
     duration_minutes = random.choice([30, 45, 60])
@@ -152,7 +152,7 @@ N_successful_charges=0
 
 for reservation_id in range(1, N_RESERVATIONS + 1):
     user_id = random.randint(1, N_USERS)
-    station_id = random.randint(1, N_STATIONS)
+    outlet_id = random.randint(1, N_OUTLETS)
     date = fake.date_between(start_date="-30d", end_date="today")
 
     duration = random.choice([30, 45, 60])
@@ -175,7 +175,7 @@ for reservation_id in range(1, N_RESERVATIONS + 1):
 
     print(
         "INSERT INTO reservation (date, reservationtime, reservationexpiry, has_charged, userid, pointid, sessionid) "
-        f"VALUES ('{date}', '{starttime}', '{reservationexpiry}', {has_charged}, {user_id}, {station_id}, {session_val});"
+        f"VALUES ('{date}', '{starttime}', '{reservationexpiry}', {has_charged}, {user_id}, {outlet_id}, {session_val});"
     )
 
 print()
