@@ -209,6 +209,24 @@ CREATE TABLE IF NOT EXISTS `charging_database`.`updates` (
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
+-- -----------------------------------------------------
+-- Table `charging_database`.`errorcodes`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `charging_database`.`errorcodes` ;
+
+CREATE TABLE IF NOT EXISTS `charging_database`.`errorcodes` (
+  `code` INT NOT NULL,
+  `description` VARCHAR(100) NOT NULL,
+  PRIMARY KEY (`code`)
+) ENGINE = InnoDB;
+
+INSERT INTO `charging_database`.`errorcodes` (code, description) VALUES
+  (200, 'Success'),
+  (204, 'No content'),
+  (400, 'Bad request'),
+  (404, 'Not found'),
+  (500, 'Internal server error');
+
 
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
