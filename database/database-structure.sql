@@ -171,9 +171,9 @@ CREATE TABLE IF NOT EXISTS `charging_database`.`reservation` (
     REFERENCES `charging_database`.`users` (`userid`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
-  CONSTRAINT `station_reserved`
+  CONSTRAINT `outlet_reserved`
     FOREIGN KEY (`pointid`)
-    REFERENCES `charging_database`.`station` (`stationid`)
+    REFERENCES `charging_database`.`outlet` (`outletid`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `reservation_session`
