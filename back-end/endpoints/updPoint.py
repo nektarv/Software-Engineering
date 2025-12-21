@@ -4,7 +4,7 @@ import mysql.connector
 from pydantic import BaseModel
 from typing import Optional
 
-from management.utils import DB_CONFIG, build_error_log
+from utils import DB_CONFIG, build_error_log
 
 router = APIRouter(prefix="/api", tags=["functional"])
 
