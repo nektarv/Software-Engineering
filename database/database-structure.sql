@@ -33,13 +33,13 @@ ENGINE = InnoDB;
 DROP TABLE IF EXISTS `charging_database`.`dam_prices` ;
 
 CREATE TABLE IF NOT EXISTS `charging_database`.`dam_prices` (
-  'price_id' INT NOT NULL AUTO_INCREMENT,
-  'timeref' DATETIME NOT NULL,
-  'price_eur_per_kwh' DECIMAL(10,4) NOT NULL,
-  'market' VARCHAR(20) NOT NULL DEFAULT 'DAM',
-  PRIMARY KEY ('price_id'),
-  INDEX 'idx_dam_timeref' ('timeref')
-) ENGINE=InnoDB;
+  `price_id` INT NOT NULL AUTO_INCREMENT,
+  `timeref` DATETIME NOT NULL,
+  `price_eur_per_kwh` DECIMAL(10,4) NOT NULL,
+  `market` VARCHAR(20) NOT NULL DEFAULT 'DAM',
+  PRIMARY KEY (`price_id`),
+  INDEX `idx_dam_timeref` (`timeref`))
+ENGINE=InnoDB;
 
 -- -----------------------------------------------------
 -- Table `charging_database`.`users`
