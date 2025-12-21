@@ -5,7 +5,7 @@ import mysql.connector
 from main import DB_CONFIG   # get db info from main
 
 
-router = APIRouter(prefix="/admin")  
+router = APIRouter()  
 
 
 def build_error_log(request: Request, code: int, error_text: str, raw_debuginfo: str):
@@ -45,7 +45,7 @@ def build_error_log(request: Request, code: int, error_text: str, raw_debuginfo:
 
 
 
-@router.get("/healthcheck")
+@router.get("/admin/healthcheck")
 def admin_healthcheck(request: Request):
     try:
         conn = mysql.connector.connect(**DB_CONFIG)
