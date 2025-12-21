@@ -197,3 +197,44 @@ for _ in range(N_UPDATES):
         "INSERT INTO `updates` (outletid, old_state, new_state, timeref) "
         f"VALUES ({outlet_id}, '{old_state}', '{new_state}', '{timeref}');"
     )
+
+# -------------------------
+# DAM PRICES INSERTS
+# -------------------------
+def generate_dam_prices(days: int = 14):
+
+    now = datetime.now().replace(minute=0, second=0, microsecond=0)
+    start = now - timedelta(days=days)
+
+    hours = days * 24
+
+    # base market price (€/kWh)
+    price = round(random.uniform(0.09, 0.16), 4)
+
+    for i in range(hours + 1):
+        t = start + timedelta(hours=i)
+
+        # Daily load pattern
+        hour = t.hour
+        multiplier = 1.0
+        if 0 <= hour < 6:
+            multiplier = 0.90
+        elif 6 <= hour < 12:
+            multiplier = 1.00
+        elif 12 <= hour < 18:
+            multiplier = 1.08
+        else:  # evening peak
+            multiplier = 1.15
+
+        # Small random walk
+        shock = random.uniform(-0.003, 0.003)
+        price = max(0.03, min(0.60, round(price + shock, 4)))
+
+        final_price = round(price * multiplier, 4)
+
+        print(
+            "INSERT INTO dam_prices (timeref, price_eur_per_kwh, market) "
+            f"VALUES ('{t.strftime('%Y-%m-%d %H:%M:%S')}', {final_price}, 'DAM');"
+        )
+
+        generate_dam_prices(days=14)
