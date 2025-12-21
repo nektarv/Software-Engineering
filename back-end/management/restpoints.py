@@ -11,6 +11,7 @@ from pathlib import Path
 
 from management.resetpoints_extractor import insert_from_json
 
+
 router = APIRouter()
 
 
@@ -18,7 +19,7 @@ router = APIRouter()
 def admin_resetpoints(request: Request): 
 
   # Hardwired path - same for everyone (database directory of the project)
-  JSON_FILE = Path("database/parts1234.json")
+  JSON_FILE = Path("management/parts1234.json")
 
   if not JSON_FILE.exists():
       # error 400
