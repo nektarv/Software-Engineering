@@ -8,5 +8,5 @@ from management.utils import DB_CONFIG, build_error_log
 router = APIRouter()
 
 
-@router.post("/admin/restpoints")
-def admin_restpoints():  pass # for now
+@router.post("/admin/addpoints")
+def admin_addpoints():  pass # for now
