@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 import mysql.connector
-from management.utils import DB_CONFIG  
+from decimal import Decimal
 
 CONNECTOR_MAP = {
     2: "J-1772", 3: "CHAdeMO", 7: "Type 2", 8: "Type 3A", 10: "Wall (Euro)",
@@ -9,52 +9,87 @@ CONNECTOR_MAP = {
 }
 
 def map_status(status: str) -> str:
-    if status == "AVAILABLE": return "available"
-    if status == "CHARGING": return "charging"
-    if status in ("OUTOFORDER", "UNDERREPAIR"): return "malfunction"
+    """Map JSON status to DB enum"""
+    if status == "AVAILABLE": 
+        return "available"
+    if status == "CHARGING": 
+        return "charging"
+    if status in ("OUTOFORDER", "UNDERREPAIR"): 
+        return "malfunction"
     return "offline"
 
 def round_decimal(value, decimals: int):
-    if value is None: return 0.0
-    factor = 10 ** decimals
-    return int(round(float(value) * factor)) / factor
+    """Safe decimal rounding for lat/lon"""
+    if value is None: 
+        return 0.0
+    try:
+        numeric_value = float(value)
+        factor = 10 ** decimals
+        return int(round(numeric_value * factor)) / factor
+    except (ValueError, TypeError):
+        return 0.0
 
-def insert_from_json(conn, cursor, json_path: Path, max_locations: int = 10):
-    """Εισάγει δεδομένα από JSON -> DB"""
-    with json_path.open("r", encoding="utf-8") as f:
-        locations = json.load(f)
+def safe_int(value, default=0):
+    """Safe conversion to int for power etc."""
+    if value is None:
+        return default
+    try:
+        return int(float(value))
+    except (ValueError, TypeError):
+        return default
+
+def insert_from_json(conn, cursor, json_path: Path, max_locations: int = None):
+    """
+    Εισάγει ΟΛΑ τα δεδομένα από JSON -> DB (χωρίς limit)
+    """
+    try:
+        with json_path.open("r", encoding="utf-8") as f:
+            locations = json.load(f)
+    except Exception as e:
+        print(f"JSON parse error: {e}")
+        return 0
 
     inserted_stations = 0
     for idx, loc in enumerate(locations):
-        if idx >= max_locations: break
+        if max_locations is not None and idx >= max_locations: 
+            break
 
-        # Station INSERT
-        cursor.execute("""
-            INSERT INTO station (address, Latitude, Longitude, name, provider) 
-            VALUES (%s, %s, %s, %s, %s)
-        """, (
-            loc.get("address"),
-            round_decimal(loc.get("latitude"), 4),
-            round_decimal(loc.get("longitude"), 4),
-            loc.get("name"), 
-            "ElectroWay"
-        ))
+        try:
+            # Station INSERT - safe values
+            cursor.execute("""
+                INSERT INTO station (address, Latitude, Longitude, name, provider) 
+                VALUES (%s, %s, %s, %s, %s)
+            """, (
+                loc.get("address", ""),
+                round_decimal(loc.get("latitude"), 4),
+                round_decimal(loc.get("longitude"), 4),
+                loc.get("name", f"Station {idx+1}"), 
+                "ElectroWay"
+            ))
+            
+            station_id = cursor.lastrowid
+            inserted_stations += 1
+
+            # Outlets INSERT - safe values
+            is_fast = 1 if loc.get("is_fast_charger") else 0
+            stations_list = loc.get("stations", [])
+            
+            for st in stations_list:
+                outlets_list = st.get("outlets", [])
+                for out in outlets_list:
+                    connector_id = out.get("connector")
+                    connector = CONNECTOR_MAP.get(connector_id, f"connector{connector_id}")
+                    power = safe_int(out.get("kilowatts"))
+                    state = map_status(out.get("status", "offline"))
+                    
+                    cursor.execute("""
+                        INSERT INTO outlet (stationid, connector, power, state, is_fast, markup) 
+                        VALUES (%s, %s, %s, %s, %s, %s)
+                    """, (station_id, connector, power, state, is_fast, 1.0))
         
-        station_id = cursor.lastrowid
-        inserted_stations += 1
-
-        # Outlets INSERT
-        is_fast = 1 if loc.get("is_fast_charger") else 0
-        for st in loc.get("stations", []):
-            for out in st.get("outlets", []):
-                connector = CONNECTOR_MAP.get(out.get("connector"), f"connector{out.get('connector')}")
-                power = int(round(out.get("kilowatts", 0)))
-                state = map_status(out.get("status"))
-                
-                cursor.execute("""
-                    INSERT INTO outlet (stationid, connector, power, state, is_fast, markup) 
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                """, (station_id, connector, power, state, is_fast, 1.0))
+        except Exception as e:
+            print(f"Error inserting station {idx}: {e}")
+            continue  # Skip problematic station, continue with next
     
     conn.commit()
     return inserted_stations

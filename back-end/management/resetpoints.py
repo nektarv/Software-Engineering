@@ -36,11 +36,23 @@ def admin_resetpoints(request: Request):
   try:
       conn = mysql.connector.connect(**DB_CONFIG)
       cursor = conn.cursor()
+
+      cursor.execute("SET FOREIGN_KEY_CHECKS = 0")
         
       # Clear tables πριν insert
+      cursor.execute("DELETE FROM sessions")
+      cursor.execute("DELETE FROM reservation")
+      cursor.execute("DELETE FROM updates") 
+      cursor.execute("DELETE FROM favourites")
       cursor.execute("DELETE FROM outlet")
       cursor.execute("DELETE FROM station")
+
+      cursor.execute("ALTER TABLE station AUTO_INCREMENT = 1")
+      cursor.execute("ALTER TABLE outlet AUTO_INCREMENT = 1")
+
       conn.commit()
+
+      cursor.execute("SET FOREIGN_KEY_CHECKS = 1")
 
       # insert from JSON with the extractor
       inserted = insert_from_json(conn, cursor, JSON_FILE)
