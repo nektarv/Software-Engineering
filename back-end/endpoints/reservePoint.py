@@ -15,7 +15,7 @@ MIN_MINUTES = 30
 async def reserve_with_specified_minutes(
     request: Request,
     point_id: int = Path(..., ge=1),
-    minutes: int = Path(..., ge=1) # must provide
+    minutes: int = Path(..., ge=1)
 ):
     """
     POST /api/reserve/{point_id}/{minutes}
@@ -97,6 +97,15 @@ async def _reserve_logic(request: Request, point_id: int, minutes: int):
         
         cursor.execute("UPDATE outlet SET state = 'reserved' WHERE outletid = %s", (point_id,))
 
+        # userid
+        cursor.execute("SELECT userid FROM users ORDER BY userid LIMIT 1")
+        user = cursor.fetchone()
+        userid = user['userid'] if user else None
+        
+        if userid is None:
+            cursor.execute("INSERT INTO users (username, password) VALUES ('reservation_user', 'temp_pass')")
+            userid = cursor.lastrowid
+
         cursor.execute("""
             INSERT INTO reservation 
             (date, reservationtime, reservationexpiry, has_charged, pointid, userid) 
@@ -107,7 +116,7 @@ async def _reserve_logic(request: Request, point_id: int, minutes: int):
             reservation_end,
             0,
             point_id,
-            None
+            userid
         ))
         
         conn.commit()

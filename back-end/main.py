@@ -5,10 +5,11 @@ from management.resetpoints import router as restpoints_router
 from management.addpoints import router as addpoints_router
 
 from endpoints.points import router as points_router
+from endpoints.reservePoint import router as reservePoint_router
+from endpoints.updPoint import router as updPoint_router
+from endpoints.newSession import router as newSession_router
 from endpoints.sessions import router as sessions_router
 from endpoints.pointstatus import router as pointstatus_router
-from endpoints.updPoint import router as updPoint_router
-from endpoints.reservePoint import router as reservePoint_router
 
 app = FastAPI()
 
@@ -17,8 +18,9 @@ app.include_router(restpoints_router)
 app.include_router(addpoints_router)
 
 app.include_router(points_router)
-app.include_router(updPoint_router)
 app.include_router(reservePoint_router)
+app.include_router(updPoint_router)
+app.include_router(newSession_router)
 app.include_router(sessions_router)
 app.include_router(pointstatus_router)
 
