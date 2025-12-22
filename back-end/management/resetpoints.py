@@ -3,7 +3,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 import mysql.connector
 
-from management.utils import DB_CONFIG, build_error_log
+from utils import DB_CONFIG, build_error_log
 
 
 from pathlib import Path

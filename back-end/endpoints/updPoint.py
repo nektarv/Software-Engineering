@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Path, Body
 from fastapi.responses import JSONResponse
 import mysql.connector
 from pydantic import BaseModel
@@ -17,8 +17,8 @@ class UpdatePointRequest(BaseModel):
 @router.post("/updpoint/{point_id}")
 async def update_point(
     request: Request,
-    point_id: int,
-    update_data: UpdatePointRequest
+    point_id: int = Path(..., ge=1),
+    update_data: UpdatePointRequest = Body(...)
 ):
     """
     (d) POST /api/updpoint/{point_id}

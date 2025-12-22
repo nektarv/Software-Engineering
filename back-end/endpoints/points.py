@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse, PlainTextResponse
 import mysql.connector
 from datetime import datetime
 
-from management.utils import DB_CONFIG, build_error_log
+from utils import DB_CONFIG, build_error_log
 
 router = APIRouter(prefix="/api", tags=["functional"])
 

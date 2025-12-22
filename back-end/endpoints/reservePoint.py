@@ -1,26 +1,71 @@
 from datetime import datetime, timedelta
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Path
 from fastapi.responses import JSONResponse
 import mysql.connector
-from typing import Optional
 
 from utils import DB_CONFIG, build_error_log
 
 router = APIRouter(prefix="/api", tags=["functional"])
 
-@router.post("/reserve/{point_id}")
-async def reserve_point(
+MAX_MINUTES = 60
+MIN_MINUTES = 30
+
+# user specified mins
+@router.post("/reserve/{point_id}/{minutes}")
+async def reserve_with_specified_minutes(
     request: Request,
-    point_id: int,
-    minutes: Optional[int] = 30
+    point_id: int = Path(..., ge=1),
+    minutes: int = Path(..., ge=1) # must provide
 ):
     """
-    (c) POST /api/reserve/{point_id}?minutes=XX
-    Reserve a charging point.
+    POST /api/reserve/{point_id}/{minutes}
+    User specified minutes
     """
     
-    MAX_MINUTES = 60
-    actual_minutes = min(minutes, MAX_MINUTES) if minutes else 30
+    if minutes < MIN_MINUTES:
+        try:
+            conn = mysql.connector.connect(**DB_CONFIG)
+            cursor = conn.cursor(dictionary=True)
+            cursor.execute("SELECT state FROM outlet WHERE outletid = %s", (point_id,))
+            point = cursor.fetchone()
+            status = point['state'] if point else "not_found"
+            cursor.close()
+            conn.close()
+        except:
+            status = "unknown"
+        
+        return {
+            "pointid": point_id,
+            "status": status,
+            "reservationendtime": "1970-01-01 00:00"
+        }
+    
+    # mins>29, keep min(mins, 60)
+    actual_minutes = min(minutes, MAX_MINUTES)
+    
+    return await _reserve_logic(request, point_id, actual_minutes)
+
+# user did not specify mins
+@router.post("/reserve/{point_id}")
+async def reserve_without_minutes(
+    request: Request,
+    point_id: int = Path(..., ge=1)
+):
+    """
+    POST /api/reserve/{point_id}
+    User didn't specify minutes
+    """
+    return await _reserve_logic(request, point_id, MIN_MINUTES)
+
+# shared logic for both cases
+async def _reserve_logic(request: Request, point_id: int, minutes: int):
+    """
+    Shared reservation logic for both patterns
+    minutes is GUARANTEED to be: 30 ≤ minutes ≤ 60
+    """
+    # double check
+    if minutes < MIN_MINUTES or minutes > MAX_MINUTES:
+        raise ValueError(f"Minutes {minutes} outside valid range 30-60")
     
     conn = None
     cursor = None
@@ -29,7 +74,6 @@ async def reserve_point(
         conn = mysql.connector.connect(**DB_CONFIG)
         cursor = conn.cursor(dictionary=True)
         
-        # Check if point exists and is available
         cursor.execute("SELECT outletid, state FROM outlet WHERE outletid = %s", (point_id,))
         point = cursor.fetchone()
         
@@ -47,16 +91,12 @@ async def reserve_point(
                 "reservationendtime": "1970-01-01 00:00"
             }
         
-        # Calculate times
         now = datetime.now()
-        reservation_end = now + timedelta(minutes=actual_minutes)
+        reservation_end = now + timedelta(minutes=minutes)
         formatted_end_time = reservation_end.strftime("%Y-%m-%d %H:%M")
         
-        # NO TRANSACTION - just execute sequentially
-        # 1. Update outlet status
         cursor.execute("UPDATE outlet SET state = 'reserved' WHERE outletid = %s", (point_id,))
-        
-        # 2. Create reservation
+
         cursor.execute("""
             INSERT INTO reservation 
             (date, reservationtime, reservationexpiry, has_charged, pointid, userid) 
@@ -67,12 +107,12 @@ async def reserve_point(
             reservation_end,
             0,
             point_id,
-            None  # Change if you have user authentication
+            None
         ))
         
-        # 3. Commit both operations
         conn.commit()
         
+        # success response
         return {
             "pointid": point_id,
             "status": "reserved",
@@ -80,7 +120,6 @@ async def reserve_point(
         }
             
     except mysql.connector.Error as db_error:
-        # Try to rollback if something failed
         if conn:
             try:
                 conn.rollback()

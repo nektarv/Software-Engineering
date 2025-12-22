@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 
-
 from management.healthcheck import router as healthcheck_router
 from management.resetpoints import router as restpoints_router
 from management.addpoints import router as addpoints_router
