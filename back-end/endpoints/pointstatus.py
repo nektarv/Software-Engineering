@@ -27,10 +27,10 @@ def get_point_status(
     date_to: str = Path(..., min_length=8, max_length=8),
     format: str = Query(default="json"),
 ):
-    """
-    (g) GET /api/pointstatus/{pointid}/{from}/{to}?format=json|csv
-    Uses updates table populated by trigger on outlet state changes.
-    """
+    
+    #(g) GET /api/pointstatus/{pointid}/{from}/{to}?format=json|csv
+    #Uses updates table populated by trigger on outlet state changes.
+    
     if format not in ("json", "csv"):
         payload = build_error_log(request, 400, "Bad request", f"Invalid format '{format}'")
         return JSONResponse(status_code=400, content=payload)

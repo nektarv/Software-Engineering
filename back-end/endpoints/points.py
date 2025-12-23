@@ -23,10 +23,10 @@ def get_points(
     status: str | None = Query(default=None),
     format: str = Query(default="json"),
 ):
-    """
-    (a) GET /api/points?status=...&format=json|csv
-    Returns outlet list with station lat/lon.
-    """
+    
+    #(a) GET /api/points?status=...&format=json|csv
+    #Returns outlet list with station lat/lon.
+    
     if status is not None and status not in ALLOWED_STATUSES:
         payload = build_error_log(request, 400, "Bad request", f"Invalid status '{status}'")
         return JSONResponse(status_code=400, content=payload)
@@ -82,10 +82,9 @@ def get_point(
     request: Request,
     point_id: int = Path(..., ge=1),
 ):
-    """
-    (b) GET /api/point/{id}
-    Returns point details + reservationendtime + computed kwhprice using DAM * markup.
-    """
+    #(b) GET /api/point/{id}
+   #Returns point details + reservationendtime + computed kwhprice using DAM * markup.
+
     try:
         conn = mysql.connector.connect(**DB_CONFIG)
         cur = conn.cursor(dictionary=True)
@@ -141,10 +140,10 @@ def get_point(
         dam = cur.fetchone()
 
         if dam is None or dam.get("price_eur_per_kwh") is None:
-            # If DAM table empty, return null price (or you can 400)
+            # If DAM table empty, return null price
             kwhprice = None
         else:
-            kwhprice = round(float(dam["price_eur_per_kwh"]) * float(row["markup"]), 4)
+            kwhprice = round(float(dam["price_eur_per_kwh"]) + float(row["markup"]), 4)
 
         cur.close()
         conn.close()

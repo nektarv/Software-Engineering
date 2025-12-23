@@ -28,11 +28,11 @@ def get_sessions(
     date_to: str = Path(..., min_length=8, max_length=8),
     format: str = Query(default="json"),
 ):
-    """
-    (f) GET /api/sessions/{id}/{from}/{to}?format=json|csv
-    id is outletid (sessions.pointid).
-    from/to are YYYYMMDD.
-    """
+    
+    #(f) GET /api/sessions/{id}/{from}/{to}?format=json|csv
+    #id is outletid (sessions.pointid).
+    #from/to are YYYYMMDD.
+    
     if format not in ("json", "csv"):
         payload = build_error_log(request, 400, "Bad request", f"Invalid format '{format}'")
         return JSONResponse(status_code=400, content=payload)
@@ -66,7 +66,7 @@ def get_sessions(
             WHERE pointid = %s
               AND starttime >= %s
               AND starttime < %s
-            ORDER BY starttime ASC
+            ORDER BY starttime DESC
         """
         cur.execute(sql, (point_id, start_ts, end_ts))
         rows = cur.fetchall()

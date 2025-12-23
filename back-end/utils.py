@@ -6,7 +6,7 @@ import mysql.connector
 DB_CONFIG = {
     "host": "localhost",
     "user": "root",
-    "password": "root",
+    "password": "ElectroWay",
     "database": "charging_database",
 }
 
