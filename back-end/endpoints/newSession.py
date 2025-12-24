@@ -1,5 +1,5 @@
 from datetime import datetime
-from fastapi import APIRouter, Request, Body
+from fastapi import APIRouter, Request, Path, Body
 from fastapi.responses import JSONResponse
 import mysql.connector
 from pydantic import BaseModel
@@ -24,141 +24,154 @@ async def new_session(
     request: Request,
     session_data: SessionRequest = Body(...)
 ):
-    """
-    (e) POST /api/newsession
-    Log a completed charging session.
-    Requires a reservation that satisfies the session.
-    """
-    
     conn = None
     cursor = None
     
     try:
         conn = mysql.connector.connect(**DB_CONFIG)
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(dictionary=True, buffered=True)
         
+        # -----------------------------        
+        # check if input data is valid
+        # -----------------------------
+
+        # check if point exists
+        cursor.execute("SELECT * FROM outlet WHERE outletid = %s", (session_data.pointid,))
+        point = cursor.fetchone()
+        if not point:
+            error = build_error_log(
+                request, 404, "Not found",
+                f"Charging point {session_data.pointid} does not exist"
+            )
+            return JSONResponse(status_code=404, content=error)
+
+        # dates in right format
         try:
             start_dt = datetime.strptime(session_data.starttime, "%Y-%m-%d %H:%M")
             end_dt = datetime.strptime(session_data.endtime, "%Y-%m-%d %H:%M")
         except ValueError:
             error = build_error_log(
                 request, 400, "Bad request",
-                "Invalid time format. Use: YYYY-MM-DD HH:MM"
+                "Invalid date/time format"
             )
             return JSONResponse(status_code=400, content=error)
         
+        # end time > start time
         if end_dt <= start_dt:
             error = build_error_log(
                 request, 400, "Bad request",
-                "endtime must be after starttime"
+                "End time must be after start time"
             )
             return JSONResponse(status_code=400, content=error)
         
+        # valid starting battery 
         if not (0 <= session_data.startsoc <= 100):
             error = build_error_log(
                 request, 400, "Bad request",
-                "startsoc must be between 0 and 100"
+                "Battery before charging must be within 0-100"
             )
             return JSONResponse(status_code=400, content=error)
         
+        # valid ending battery
         if not (0 <= session_data.endsoc <= 100):
             error = build_error_log(
                 request, 400, "Bad request",
-                "endsoc must be between 0 and 100"
+                "Battery after charging must be within 0-100"
             )
             return JSONResponse(status_code=400, content=error)
         
-        if session_data.endsoc <= session_data.startsoc:
+        # ending battery >= starting battery
+        if session_data.endsoc < session_data.startsoc:
             error = build_error_log(
                 request, 400, "Bad request",
-                "endsoc must be greater than startsoc"
+                "Battery percentage can't decrease"
             )
             return JSONResponse(status_code=400, content=error)
         
+        # total kWh > 0
+        if session_data.totalkwh <= 0:
+            error = build_error_log(
+                request, 400, "Bad request",
+                "Total kWh used must be positive"
+            )
+            return JSONResponse(status_code=400, content=error)
+        
+        # kWh price > 0
+        if session_data.kwhprice <= 0:
+            error = build_error_log(
+                request, 400, "Bad request",
+                "kWh price must be positive"
+            )
+            return JSONResponse(status_code=400, content=error)
+        
+        # amount payed > 0
+        if session_data.amount <= 0:
+            error = build_error_log(
+                request, 400, "Bad request",
+                "Amount payed must be positive"
+            )
+            return JSONResponse(status_code=400, content=error)
+
+        # amount matches up with total kwh (times) kwh price
         expected_amount = session_data.totalkwh * session_data.kwhprice
         if abs(session_data.amount - expected_amount) > 0.001: # allow rounding differences
             error = build_error_log(
                 request, 400, "Bad request",
-                f"amount ({session_data.amount}) doesn't match totalkwh × kwhprice ({expected_amount:.2f})"
+                "Amount given doesn't match expected amount based on totalkwh and kwhprice"
             )
             return JSONResponse(status_code=400, content=error)
         
-        if session_data.totalkwh <= 0:
-            error = build_error_log(
-                request, 400, "Bad request",
-                "totalkwh must be positive"
-            )
-            return JSONResponse(status_code=400, content=error)
-        
-        if session_data.kwhprice <= 0:
-            error = build_error_log(
-                request, 400, "Bad request",
-                "kwhprice must be positive"
-            )
-            return JSONResponse(status_code=400, content=error)
-        
-        if session_data.amount <= 0:
-            error = build_error_log(
-                request, 400, "Bad request",
-                "amount must be positive"
-            )
-            return JSONResponse(status_code=400, content=error)
-        
-        cursor.execute("SELECT * FROM outlet WHERE outletid = %s", (session_data.pointid,))
-        point = cursor.fetchone()
-        
-        if not point:
-            error = build_error_log(
-                request, 404, "Not found",
-                f"Point {session_data.pointid} does not exist"
-            )
-            return JSONResponse(status_code=404, content=error)
-        
-        # find matching reservation
+        # -------------------------------------
+        # input data is valid
+        # let's check if the reservation exists
+        # -------------------------------------        
+
+        # find a reservation that matches the input
+        # and hasn't been labeled as "charging / has charged"
         cursor.execute("""
             SELECT reservationid, has_charged
             FROM reservation 
             WHERE pointid = %s
-              AND reservationtime <= %s
-              AND reservationexpiry >= %s
-              AND has_charged = 0
+                AND reservationtime <= %s
+                AND reservationexpiry >= %s
+                AND has_charged = 0
+                AND sessionid IS NULL
             ORDER BY reservationtime DESC
             LIMIT 1
         """, (session_data.pointid, start_dt, end_dt))
         
         reservation = cursor.fetchone()
         
+        # did we find a matching reservation?
         if not reservation:
             error = build_error_log(
                 request, 400, "Bad request",
-                "No active reservation found for this point and time period"
+                "Either a reservation that matches the input doesn't exist or it's already began" 
             )
             return JSONResponse(status_code=400, content=error)
+
+        # ------------------------------------------------------
+        # a matching reservation exists, let's update our tables
+        # ------------------------------------------------------
         
-        if reservation['has_charged'] == 1:
-            error = build_error_log(
-                request, 400, "Bad request",
-                "Reservation already has a charging session"
-            )
-            return JSONResponse(status_code=400, content=error)
-        
+        # insert session
         cursor.execute("""
             INSERT INTO sessions 
-            (pointid, starttime, endtime, startsoc, endsoc, totalkwh, kwprice, amount) 
+            (starttime, endtime, startsoc, endsoc, totalkwh, kwprice, amount, pointid) 
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         """, (
-            session_data.pointid,
             start_dt,
             end_dt,
             session_data.startsoc,
             session_data.endsoc,
             session_data.totalkwh,
             session_data.kwhprice,
-            session_data.amount
+            session_data.amount,
+            session_data.pointid
         ))
+        session_id = cursor.lastrowid   # session_id is AUTO INCREMENT
         
-        session_id = cursor.lastrowid
-        
+        # update reservations
         cursor.execute("""
             UPDATE reservation 
             SET has_charged = 1, 
@@ -166,14 +179,17 @@ async def new_session(
             WHERE reservationid = %s
         """, (session_id, reservation['reservationid']))
         
+        # we record sessions after they're done
+        # reset outlet to available
         cursor.execute("""
             UPDATE outlet 
             SET state = 'available' 
             WHERE outletid = %s
+                AND state IN ('charging', 'reserved')
         """, (session_data.pointid,))
-        
         conn.commit()
 
+        # success response
         return JSONResponse(status_code=200, content={})
             
     except mysql.connector.Error as db_error:

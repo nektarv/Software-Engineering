@@ -7,8 +7,10 @@ from utils import DB_CONFIG, build_error_log
 
 router = APIRouter(prefix="/api", tags=["functional"])
 
+ALLOWED_STATUSES = {"available", "charging", "reserved", "malfunction", "offline"}
+
 MAX_MINUTES = 60
-MIN_MINUTES = 30
+MIN_MINUTES = 30    # either 30 or 1
 
 # user specified mins
 @router.post("/reserve/{point_id}/{minutes}")
@@ -17,33 +19,7 @@ async def reserve_with_specified_minutes(
     point_id: int = Path(..., ge=1),
     minutes: int = Path(..., ge=1)
 ):
-    """
-    POST /api/reserve/{point_id}/{minutes}
-    User specified minutes
-    """
-    
-    if minutes < MIN_MINUTES:
-        try:
-            conn = mysql.connector.connect(**DB_CONFIG)
-            cursor = conn.cursor(dictionary=True)
-            cursor.execute("SELECT state FROM outlet WHERE outletid = %s", (point_id,))
-            point = cursor.fetchone()
-            status = point['state'] if point else "not_found"
-            cursor.close()
-            conn.close()
-        except:
-            status = "unknown"
-        
-        return {
-            "pointid": point_id,
-            "status": status,
-            "reservationendtime": "1970-01-01 00:00"
-        }
-    
-    # mins>29, keep min(mins, 60)
-    actual_minutes = min(minutes, MAX_MINUTES)
-    
-    return await _reserve_logic(request, point_id, actual_minutes)
+    return await reserve(request, point_id, minutes)
 
 # user did not specify mins
 @router.post("/reserve/{point_id}")
@@ -51,74 +27,71 @@ async def reserve_without_minutes(
     request: Request,
     point_id: int = Path(..., ge=1)
 ):
-    """
-    POST /api/reserve/{point_id}
-    User didn't specify minutes
-    """
-    return await _reserve_logic(request, point_id, MIN_MINUTES)
+    return await reserve(request, point_id, MIN_MINUTES)
 
 # shared logic for both cases
-async def _reserve_logic(request: Request, point_id: int, minutes: int):
-    """
-    Shared reservation logic for both patterns
-    minutes is GUARANTEED to be: 30 ≤ minutes ≤ 60
-    """
-    # double check
-    if minutes < MIN_MINUTES or minutes > MAX_MINUTES:
-        raise ValueError(f"Minutes {minutes} outside valid range 30-60")
-    
-    conn = None
-    cursor = None
-    
+async def reserve(request: Request, point_id: int, minutes: int):
     try:
         conn = mysql.connector.connect(**DB_CONFIG)
-        cursor = conn.cursor(dictionary=True)
-        
+        cursor = conn.cursor(dictionary=True, buffered=True)
         cursor.execute("SELECT outletid, state FROM outlet WHERE outletid = %s", (point_id,))
         point = cursor.fetchone()
-        
+
+        # check if point exists
         if not point:
+            error = build_error_log(
+                request, 404, "Not found",
+                f"Charging point {point_id} does not exist"
+            )
+            return JSONResponse(status_code=404, content=error)
+
+        status = point['state']
+        # check for valid status
+        if status not in ALLOWED_STATUSES:
+            error = build_error_log(
+                request, 400, "Bad request",
+                f"Invalid status"
+            )
+            return JSONResponse(status_code=400, content=error)   
+
+        # check for valid minutes and correct status
+        if (minutes<MIN_MINUTES) or (status!='available'):
             return {
                 "pointid": point_id,
-                "status": "not_found",
+                "status": status,
                 "reservationendtime": "1970-01-01 00:00"
             }
+    
+        # ----------------------------------------------
+        # we have a valid reservation, let's submit it
+        # ----------------------------------------------
         
-        if point['state'] != 'available':
-            return {
-                "pointid": point_id,
-                "status": point['state'],
-                "reservationendtime": "1970-01-01 00:00"
-            }
-        
+        # compute reservation end time
         now = datetime.now()
-        reservation_end = now + timedelta(minutes=minutes)
+        reservation_mins = min(minutes, MAX_MINUTES)
+        reservation_end = now + timedelta(minutes=reservation_mins)
         formatted_end_time = reservation_end.strftime("%Y-%m-%d %H:%M")
         
         cursor.execute("UPDATE outlet SET state = 'reserved' WHERE outletid = %s", (point_id,))
 
-        # userid
-        cursor.execute("SELECT userid FROM users ORDER BY userid LIMIT 1")
+        # dummy user for now
+        cursor.execute("SELECT userid FROM users")
         user = cursor.fetchone()
-        userid = user['userid'] if user else None
-        
-        if userid is None:
-            cursor.execute("INSERT INTO users (username, password) VALUES ('reservation_user', 'temp_pass')")
-            userid = cursor.lastrowid
+        userid = user['userid']
 
         cursor.execute("""
             INSERT INTO reservation 
-            (date, reservationtime, reservationexpiry, has_charged, pointid, userid) 
-            VALUES (%s, %s, %s, %s, %s, %s)
-        """, (
+            (date, reservationtime, reservationexpiry, has_charged, userid, pointid, sessionid) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, (
             now.date(),
             now,
             reservation_end,
             0,
+            userid,
             point_id,
-            userid
+            None
         ))
-        
         conn.commit()
         
         # success response
