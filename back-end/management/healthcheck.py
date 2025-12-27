@@ -8,7 +8,7 @@ router = APIRouter()
 
 
 
-@router.get("/admin/healthcheck")
+@router.get("/api/admin/healthcheck")
 def admin_healthcheck(request: Request):
     try:
         conn = mysql.connector.connect(**DB_CONFIG)

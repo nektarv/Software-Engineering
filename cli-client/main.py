@@ -52,7 +52,7 @@ def addpoints(source):
 # -------------------------------
 def points(status=None, output_format="csv"):
 
-    url = 'http://localhost:9876/api/points' ## δεν δουλεύει το link 
+    url = 'http://localhost:9876/api/points' 
 
     params = {}
     if status:
@@ -61,7 +61,7 @@ def points(status=None, output_format="csv"):
         params["format"] = output_format.lower()  # csv ή json
 
     response = requests.get(url, params=params)
-    response.raise_for_status()
+    print(response.status_code)
 
     if output_format.lower() == "json":
         data = response.json()
@@ -80,35 +80,112 @@ def points(status=None, output_format="csv"):
 # -------------------------------
 #   Point
 # -------------------------------
-def point(id):
-    return True
+def point(point_id: int):
+ 
+    url = f"http://localhost:9876/api/point/{point_id}"       
+    response = requests.get(url)
+    print(response.status_code)
+    data = response.json()
+    print(json.dumps(data, ensure_ascii=False, indent=2))
 
 # -------------------------------
 #   Reserve
 # -------------------------------
-def reserve(id, minutes=None):
-    return True
+def reserve(point_id: int, minutes: int = None):
+    if minutes is None:
+        url = f"http://localhost:9876/api/reserve/{point_id}"
+    else:
+        url = f"http://localhost:9876/api/reserve/{point_id}/{minutes}"
+    
+    response = requests.post(url)
+    print(response.status_code)
+    data = response.json()
+    print(json.dumps(data, ensure_ascii=False, indent=2))   
 
 # -------------------------------
 #   Updpoint
 # -------------------------------
-def updpoint(id,status=None, price=None):
-    return True
+def updpoint(point_id: int, status: str = None, price: float = None):
+    if status is None and price is None:
+        raise ValueError("At least one of --status or --price must be provided")
+    
+    payload = {}
+    if status:
+        payload["status"] = status
+    if price:
+        payload["kwhprice"] = price
+    
+    url=f"http://localhost:9876/api/updpoint/{point_id}"
+    response = requests.post(url, json=payload)
+    data = response.json()
+    print(json.dumps(data, indent=2, ensure_ascii=False))
 
 # -------------------------------
 #   Newsession
 # -------------------------------
-def newsession(status=None, output_format="csv"):
-    return True
+def newsession(pointid: int, starttime: str, endtime: str, startsoc: int,
+               endsoc: int, totalkwh: float, kwhprice: float, amount: float):
+    payload = {
+        "pointid": pointid,
+        "starttime": starttime,
+        "endtime": endtime,
+        "startsoc": startsoc,
+        "endsoc": endsoc,
+        "totalkwh": totalkwh,
+        "kwhprice": kwhprice,
+        "amount": amount
+    }
+    url= "http://localhost:9876/api/newsession"
+    response = requests.post(url, json=payload)
+    print(response.status_code) 
+    data = response.json()
+    print(json.dumps(data, indent=2, ensure_ascii=False))
+ 
+# -------------------------------
+#   Sessions - not working yet
+# -------------------------------
+def sessions(pointid, from_date, to_date, output_format="csv"):
+    url = 'http://localhost:9876/api/sessions'
+    params = {}
+    if pointid:
+        params["id"] = pointid
+    if from_date:
+        params["from"] = from_date
+    if to_date:
+        params["to"] = to_date
+    if output_format:
+        params["format"] = output_format.lower()
+    
+    response = requests.get(url, params=params)
+    print(response.status_code)
+        
+    if response.status_code != 200: 
+        error_data = response.json()
+        print(f"Error message: {error_data}") 
+        return
+
+    if output_format.lower() == "json":
+        data = response.json()
+        # φθίνουσα ταξινόμηση  κατά starttime
+        data_sorted = sorted(data, key=lambda x: x["starttime"], reverse=True)
+        print(json.dumps(data_sorted, ensure_ascii=False, indent=2))
+    else:
+        # CSV
+        csv_text = response.text
+        reader = csv.DictReader(StringIO(csv_text))
+        data = list(reader)
+        if data and "starttime" in data[0]:  # Έλεγχος αν υπάρχουν δεδομένα και το πεδίο
+            data_sorted = sorted(data, key=lambda x: x["starttime"], reverse=True)
+        else:
+            data_sorted = data  # Χωρίς ταξινόμηση αν λείπουν δεδομένα ή το πεδίο
+
+        writer = csv.DictWriter(sys.stdout, fieldnames=reader.fieldnames)
+        writer.writeheader()
+        writer.writerows(data_sorted)
+    
 
 # -------------------------------
-#   Sessions
-# -------------------------------
-def sessions(id, from_date, to_date, output_format="csv"):
-    return True
-
-# -------------------------------
-#   Pointstatus
+#   Pointstatus - not written yet
 # -------------------------------
 def pointstatus(id, from_date, to_date, output_format="csv"):
     return True

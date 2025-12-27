@@ -39,7 +39,7 @@ def get_or_create_station(cursor, address, lat, lon, name, provider):
 router = APIRouter()
 
 
-@router.post("/admin/addpoints")
+@router.post("/api/admin/addpoints")
 async def admin_addpoints(request: Request, file: UploadFile = File(...)):
 
   if file.content_type != "text/csv":

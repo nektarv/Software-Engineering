@@ -15,7 +15,7 @@ from management.resetpoints_extractor import insert_from_json
 router = APIRouter()
 
 
-@router.post("/admin/resetpoints")
+@router.post("/api/admin/resetpoints")
 def admin_resetpoints(request: Request): 
 
   # Hardwired path - same for everyone (database directory of the project)
