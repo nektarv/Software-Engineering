@@ -1,0 +1,6 @@
+# Για την κλήση του Api απαιτείται 
+# Έλεγχος έκδοσης Python, χρείαζεται έκδοση τουλάχιστον 3.11
+python3 --version
+# και οι python βιβλιοθήκες 
+pip install mysql-connector-python
+pip install python-multipart

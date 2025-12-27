@@ -11,7 +11,7 @@ from endpoints.newSession import router as newSession_router
 from endpoints.sessions import router as sessions_router
 from endpoints.pointstatus import router as pointstatus_router
 
-app = FastAPI()
+app = FastAPI(openapi_prefix="/api")
 
 app.include_router(healthcheck_router)
 app.include_router(restpoints_router)
