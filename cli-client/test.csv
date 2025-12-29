@@ -1,4 +1,0 @@
-address,Latitude,Longitude,station_name,provider,connector,power,state,is_fast,markup
-"Λ. Κηφισίας 123, Μαρούσι",38.0562,23.8083,"Kifisia Center","ElectroWay","Type2",22,"AVAILABLE",0,0.10
-"Λ. Βουλιαγμένης 45, Γλυφάδα",37.8780,23.7520,"Glyfada Mall","ElectroWay","CCS",50,"AVAILABLE",1,0.20
-"Εγνατία 12, Θεσσαλονίκη",40.6401,22.9444,"Egnatia Hub","ElectroWay","CCS",43,"AVAILABLE",1,0.15

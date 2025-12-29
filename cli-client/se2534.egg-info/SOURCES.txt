@@ -1,9 +1,0 @@
-README.md
-main.py
-setup.py
-se2534.egg-info/PKG-INFO
-se2534.egg-info/SOURCES.txt
-se2534.egg-info/dependency_links.txt
-se2534.egg-info/entry_points.txt
-se2534.egg-info/requires.txt
-se2534.egg-info/top_level.txt

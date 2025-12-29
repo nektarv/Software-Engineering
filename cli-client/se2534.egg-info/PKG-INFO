@@ -1,5 +1,0 @@
-Metadata-Version: 2.4
-Name: se2534
-Version: 0.1
-Requires-Dist: requests
-Dynamic: requires-dist
