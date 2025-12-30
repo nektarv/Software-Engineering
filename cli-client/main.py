@@ -10,26 +10,26 @@ from datetime import datetime
 
 # πριν τρέξω κάποιο command $ se25XX scope --param1 value1 [--param2 value2 ...] --format fff τρέχω pip install -e .
 
-def _validate_date_field(value, name):
+def normalize_date(date_str: str) -> str:
     """
-    Δέχεται διάφορες μορφές (π.χ. 2025-10-12, 12-10-2025, 12/10/2025)
-    και επιστρέφει string YYYYMMDD, έτοιμο για χρήση στο API.
+    Δέχεται ημερομηνία σε format:
+      YYYYMMDD, YYYY-MM-DD ή YYYY/MM/DD
+    και επιστρέφει string YYYYMMDD για το API.
     """
-    accepted_formats = ["%Y%m%d", "%Y-%m-%d", "%d-%m-%Y", "%d/%m/%Y"]
-    parsed = None
-    for fmt in accepted_formats:
-        try:
-            parsed = datetime.strptime(value, fmt)
-            break
-        except ValueError:
-            continue
+    # Καθαρίζουμε διαχωριστικά
+    cleaned = date_str.replace("-", "").replace("/", "")
 
-    if not parsed:
-        print(f"Σφάλμα: το πεδίο {name} πρέπει να είναι σε μορφή ΗΗ-ΜΜ-ΕΕΕΕ ή YYYYMMDD, έλαβε '{value}'")
-        sys.exit(1)
+    # Τώρα πρέπει να είναι 8 χαρακτήρες
+    if len(cleaned) != 8 or not cleaned.isdigit():
+        raise ValueError(f"Invalid date format: {date_str}. Expected YYYYMMDD, YYYY-MM-DD, or YYYY/MM/DD")
 
-    # Επιστρέφει σε μορφή YYYYMMDD
-    return parsed.strftime("%Y%m%d")
+    # Ελέγχουμε αν είναι έγκυρη ημερομηνία
+    try:
+        dt = datetime.strptime(cleaned, "%Y%m%d")
+        return dt.strftime("%Y%m%d")
+    except ValueError:
+        raise ValueError(f"Invalid date: {date_str}")
+
 
 # -------------------------------
 # Healthcheck
@@ -84,6 +84,10 @@ def points(status=None, output_format="csv"):
 
     response = requests.get(url, params=params)
     print(response.status_code)
+
+    if response.status_code == 204:
+        print("No data found")
+        return
 
     if output_format.lower() == "json":
         data = response.json()
@@ -164,16 +168,73 @@ def newsession(pointid: int, starttime: str, endtime: str, startsoc: int,
     print(json.dumps(data, indent=2, ensure_ascii=False))
  
 # -------------------------------
-#   Sessions - not working yet
+#   Sessions 
 # -------------------------------
 def sessions(pointid, from_date, to_date, output_format="csv"):
-    print("hi")
+
+    dt_from_str = normalize_date(from_date)
+    dt_to_str = normalize_date(to_date)
+    url = f"http://localhost:9876/api/sessions/{pointid}/{dt_from_str}/{dt_to_str}?format={output_format}"
+    response = requests.get(url)
+    print(response.status_code)
+
+    if response.status_code == 204:
+        # Κενά δεδομένα 
+        print("No sessions found.")
+        return
+    else:
+        if output_format.lower() == "json":
+            data = response.json()
+            print(json.dumps(data, ensure_ascii=False, indent=2))
+        else:
+            # CSV
+            csv_text = response.text
+            reader = csv.DictReader(StringIO(csv_text))
+            data = list(reader)
+            writer = csv.DictWriter(sys.stdout, fieldnames=reader.fieldnames)
+            writer.writeheader()
+            writer.writerows(data)
+
 
 # -------------------------------
-#   Pointstatus - not written yet
+#   Pointstatus 
 # -------------------------------
 def pointstatus(id, from_date, to_date, output_format="csv"):
-    return True
+
+    dt_from_str = normalize_date(from_date)
+    dt_to_str = normalize_date(to_date)
+    url = f"http://localhost:9876/api/pointstatus/{id}/{dt_from_str}/{dt_to_str}?format={output_format}"
+    #url = f"http://localhost:9876/api/pointstatus/{id}/{from_date}/{to_date}?format={output_format}"
+    response = requests.get(url)
+    print(response.status_code)
+
+    if response.status_code == 204:
+        print( "No point status changes found.")
+        return
+    else:
+        if output_format.lower() == "json":
+            data = response.json()
+            #print(json.dumps(data, ensure_ascii=False, indent=2))
+        else:
+            # CSV
+            csv_text = response.text
+            reader = csv.DictReader(StringIO(csv_text))
+            data = list(reader)
+            #writer = csv.DictWriter(sys.stdout, fieldnames=reader.fieldnames)
+            #writer.writeheader()
+            #writer.writerows(data)
+
+        if data and "timeref" in data[0]:
+            data.sort(key=lambda x: x["timeref"], reverse=True)
+
+        if output_format.lower() == "json":
+            print(json.dumps(data, ensure_ascii=False, indent=2))
+        else:
+            writer = csv.DictWriter(sys.stdout, fieldnames=data[0].keys())
+            writer.writeheader()
+            writer.writerows(data)
+
+
 
 def main():
     parser = argparse.ArgumentParser(description="CLI για EV Charging API")
@@ -191,7 +252,7 @@ def main():
     )
     #points
     p_points = subparsers.add_parser("points", help="Λίστα σημείων φόρτισης")
-    p_points.add_argument("--status", type=str, choices=["available","charging","reserved","offline"],
+    p_points.add_argument("--status", type=str, choices=["available","charging","reserved","offline","malfunction"],
                           help="Φιλτράρισμα κατά status")
     p_points.add_argument("--format", type=str, choices=["csv","json"], default="csv",
                           help="Μορφότυπος εξόδου")
@@ -207,7 +268,7 @@ def main():
     #updpoint
     p_upd = subparsers.add_parser("updpoint", help="Ενημέρωση σημείου φόρτισης")
     p_upd.add_argument("--id", required=True, help="ID σημείου φόρτισης")
-    p_upd.add_argument("--status", type=str, choices=["available","charging","reserved","offline"],
+    p_upd.add_argument("--status", type=str, choices=["available","charging","reserved","offline","malfunction"],
                       help="Νέο status")
     p_upd.add_argument("--price", type=float, help="Νέα τιμή ανά kWh")
 
@@ -265,4 +326,4 @@ def main():
         sessions(args.id, args.from_date, args.to_date, args.format)
     elif args.scope == "pointstatus":
         pointstatus(args.id, args.from_date, args.to_date, args.format)
-
+ 
