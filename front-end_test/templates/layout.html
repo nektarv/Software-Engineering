@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>EV Charger Reservation</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Leaflet CSS (for Folium maps) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/map" class="{% if active_page == 'map' %}active{% endif %}">🗺️ Map</a>
+        <a href="/list" class="{% if active_page == 'list' %}active{% endif %}">📋 List</a>
+        <a href="/stats" class="{% if active_page == 'stats' %}active{% endif %}">📊 Statistics</a>
+    </nav>
+    
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Leaflet JS (for Folium maps) -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
