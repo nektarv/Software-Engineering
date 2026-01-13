@@ -1,0 +1,119 @@
+/* frontend/static/css/style.css - UPDATED VERSION */
+
+/* ===== RESET & BASE STYLES ===== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f5f5f5;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ===== NAVIGATION BAR - FIXED LAYOUT ===== */
+.navbar {
+    background: linear-gradient(135deg, #1a73e8, #0d47a1);
+    color: white;
+    padding: 0.5rem 0;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.nav-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+    display: flex;
+    justify-content: space-between; /* This pushes left and right apart */
+    align-items: center;
+}
+
+/* Brand/Logo on LEFT */
+.nav-brand {
+    display: flex;
+    align-items: center;
+}
+
+.nav-brand .brand-link {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: white;
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.nav-brand i {
+    font-size: 1.8rem;
+    margin-right: 0.5rem;
+    color: #4caf50;
+}
+
+.brand-text {
+    font-size: 1.3rem;
+}
+
+/* Navigation Links Container */
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+/* Main navigation buttons (Map, List, Stats) */
+.nav-main-links {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Profile button on RIGHT */
+.nav-profile {
+    margin-left: 2rem;
+    padding-left: 2rem;
+    border-left: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Individual Link Styles */
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    text-decoration: none;
+    color: white;
+    border-radius: 25px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    white-space: nowrap; /* Prevents text wrapping */
+}
+
+.nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+}
+
+.nav-link.active {
+    background-color: rgba(255, 255, 255, 0.25);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.nav-link i {
+    font-size: 1.2rem;
+}
+
+.link-text {
+    font-size: 1rem;
+}
+
+.profile-link {
+    background-color: rgba(255, 255, 255, 0.1);
+}

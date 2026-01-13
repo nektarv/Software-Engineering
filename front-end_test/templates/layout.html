@@ -1,0 +1,87 @@
+<!-- frontend/templates/layout.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EV Charger Reservation System</title>
+    
+    <!-- Link to your CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <!-- Font Awesome for icons (optional but nice) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Any page-specific head content will go here -->
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <!-- Logo/Brand -->
+            <div class="nav-brand">
+                <a href="{{ url_for('map_page') }}" class="brand-link">
+                    <i class="fas fa-bolt"></i>
+                    <span class="brand-text">EV Charger Reservations</span>
+                </a>
+            </div>
+            
+            <!-- Navigation Links -->
+            <div class="nav-links">
+                <!-- Map Button -->
+                <a href="{{ url_for('map_page') }}" 
+                   class="nav-link {% if active_page == 'map' %}active{% endif %}">
+                    <i class="fas fa-map-marked-alt"></i>
+                    <span class="link-text">Map View</span>
+                </a>
+                
+                <!-- List Button -->
+                <a href="{{ url_for('list_page') }}" 
+                   class="nav-link {% if active_page == 'list' %}active{% endif %}">
+                    <i class="fas fa-list"></i>
+                    <span class="link-text">List View</span>
+                </a>
+                
+                <!-- Statistics Button -->
+                <a href="{{ url_for('stats_page') }}" 
+                   class="nav-link {% if active_page == 'list' %}active{% endif %}">
+                    <i class="fas fa-chart-bar"></i>
+                    <span class="link-text">Statistics</span>
+                </a>
+                
+                <!-- Profile Button (Right-aligned) -->
+                <div class="nav-profile">
+                    <a href="#" class="nav-link profile-link">
+                        <i class="fas fa-user-circle"></i>
+                        <span class="link-text">Profile</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        <!-- Page-specific content will be inserted here -->
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer (optional) -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>EV Charger Reservation System &copy; 2024</p>
+            <p class="footer-status">
+                <i class="fas fa-circle status-indicator"></i>
+                <span>Backend Status: Connected</span>
+            </p>
+        </div>
+    </footer>
+
+    <!-- Link to your JavaScript -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    <!-- Any page-specific scripts will go here -->
+    {% block scripts %}{% endblock %}
+</body>
+</html>
