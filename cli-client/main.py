@@ -234,8 +234,6 @@ def pointstatus(id, from_date, to_date, output_format="csv"):
             writer.writeheader()
             writer.writerows(data)
 
-
-
 def main():
     parser = argparse.ArgumentParser(description="CLI για EV Charging API")
     subparsers = parser.add_subparsers(dest="scope", required=True)
