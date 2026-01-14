@@ -10,6 +10,25 @@ router = APIRouter(prefix="/api", tags=["functional"])
 ALLOWED_FORMATS = {"json", "csv"}
 ALLOWED_STATUSES = {"available", "charging", "reserved", "malfunction", "offline"}
 
+def _empty_to_none(v):
+    if v is None:
+        return None
+    if isinstance(v, str) and v.strip() == "":
+        return None
+    return v
+
+def _to_float_or_none(v):
+    v = _empty_to_none(v)
+    if v is None:
+        return None
+    return float(v)
+
+def _to_int_or_none(v):
+    v = _empty_to_none(v)
+    if v is None:
+        return None
+    return int(v)
+
 
 def _rows_to_csv(rows, header):
     lines = [",".join(header)]
@@ -105,17 +124,18 @@ def _get_dam_price_or_error(cur, request: Request, target_ts: str | None):
 def list_chargers(
     request: Request,
     # Filters
-    min_price: float | None = Query(default=None),
-    max_price: float | None = Query(default=None),
+    min_price: str | None = Query(default=None),
+    max_price: str | None = Query(default=None),
     location_q: str | None = Query(default=None),
     connector: str | None = Query(default=None),
-    min_power: int | None = Query(default=None),
-    max_power: int | None = Query(default=None),
+    min_power: str | None = Query(default=None),
+    max_power: str | None = Query(default=None),
     status: str | None = Query(default=None),  # only applied when viewing non-current
     only_fast: int | None = Query(default=None),  # 0/1
 
+
     # Favourites
-    userid: int | None = Query(default=None),
+    userid: str | None = Query(default=None),
     favourites_only: int = Query(default=0),  # 0/1
 
     # Price time
@@ -124,6 +144,12 @@ def list_chargers(
     # Output format
     format: str = Query(default="json"),
 ):
+    min_price = _to_float_or_none(min_price)
+    max_price = _to_float_or_none(max_price)
+    min_power = _to_int_or_none(min_power)
+    max_power = _to_int_or_none(max_power)
+    userid = _to_int_or_none(userid)
+
     # Validate basic params
     if format not in ALLOWED_FORMATS:
         payload = build_error_log(request, 400, "Bad request", f"Invalid format '{format}'")
