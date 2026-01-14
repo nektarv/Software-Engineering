@@ -1,2 +1,180 @@
 <!-- frontend/templates/map.html -->
 {% extends "layout.html" %}
+
+{% block head %}
+{{ super() }}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""/>
+<!-- Custom Map CSS -->
+<link rel="stylesheet" href="/static/css/map.css">
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""></script>
+{% endblock %}
+
+{% block content %}
+<div class="map-container">
+    <!-- Page Title -->
+    <h1 style="padding: 20px;">Charger Map</h1>
+    <p style="padding: 0 20px 20px 20px;">Click on any charger pin to view details and make a reservation.</p>
+
+    <!-- Map Controls (floating over map) -->
+    <div class="map-controls">
+        <h4>Filter by Status:</h4>
+        <div class="filter-option">
+            <input type="checkbox" id="filter-available" checked>
+            <label for="filter-available">Available</label>
+        </div>
+        <div class="filter-option">
+            <input type="checkbox" id="filter-charging" unchecked>
+            <label for="filter-charging">Charging</label>
+        </div>
+        <div class="filter-option">
+            <input type="checkbox" id="filter-reserved" unchecked>
+            <label for="filter-reserved">Reserved</label>
+        </div>
+        <div class="filter-option">
+            <input type="checkbox" id="filter-malfunction" unchecked>
+            <label for="filter-malfunction">Malfunction</label>
+        </div>
+        <div class="filter-option">
+            <input type="checkbox" id="filter-offline" unchecked>
+            <label for="filter-offline">Offline</label>
+        </div>
+        <button id="apply-filters" class="reserve-btn">Apply Filters</button>
+    </div>
+
+    <!-- Map Container -->
+    <div id="map"></div>
+
+    <!-- Charger Details Panel (initially hidden) -->
+    <div id="charger-details" style="display: none;">
+        <h3>Charger Details</h3>
+        <div id="charger-info-content"></div>
+    </div>
+</div>
+
+
+<script>
+// Initialize the map
+function fitMapToMarkers() {
+    if (chargerMarkers.length === 0) return;  // Nothing to fit
+
+    const group = new L.featureGroup(chargerMarkers);
+    map.fitBounds(group.getBounds().pad(0.2));  // Add padding so markers aren’t at the edge
+}
+
+const map = L.map('map').setView([40.7128, -74.0060], 13);
+
+// Add OpenStreetMap tiles
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 19
+}).addTo(map);
+
+// Store charger markers for filtering
+let chargerMarkers = [];
+let currentChargers = {{ chargers | tojson | safe }};
+
+// Function to get status color for markers
+function getStatusColor(status) {
+    switch(status.toLowerCase()) {
+        case 'available': return '#28a745';  // green
+        case 'charging': return '#3498db';   // blue
+        case 'reserved': return '#6f42c1';   // purple
+        case 'malfunction': return '#fd7e14';// orange
+        case 'offline': return '#6c757d';    // gray
+        default: return '#17a2b8';           // light blue for unknown
+    }
+}
+
+// Function to get status class for details panel
+function getStatusClass(status) {
+    switch(status.toLowerCase()) {
+        case 'available': return 'status-available';
+        case 'charging': return 'status-charging';
+        case 'reserved': return 'status-reserved';
+        case 'malfunction': return 'status-malfunction';
+        case 'offline': return 'status-offline';
+        default: return 'status-unknown';
+    }
+}
+
+// Create markers
+function createMarkers(chargers) {
+    // Clear existing markers
+    chargerMarkers.forEach(marker => map.removeLayer(marker));
+    chargerMarkers = [];
+
+    chargers.forEach(charger => {
+        const marker = L.circleMarker([charger.lat, charger.lon], {
+            radius: 10,
+            fillColor: getStatusColor(charger.status),
+            color: '#000',
+            weight: 1,
+            opacity: 1,
+            fillOpacity: 0.8
+        }).addTo(map);
+
+        marker.on('click', () => showChargerDetails(charger));
+        chargerMarkers.push(marker);
+    });
+}
+
+// Show charger details
+function showChargerDetails(charger) {
+    const detailsPanel = document.getElementById('charger-details');
+    const contentDiv = document.getElementById('charger-info-content');
+
+    contentDiv.innerHTML = `
+        <div class="charger-detail-item">
+            <strong>ID:</strong> ${charger.pointid}
+        </div>
+        <div class="charger-detail-item">
+            <strong>Capacity:</strong> ${charger.cap} kW
+        </div>
+        <div class="charger-detail-item">
+            <strong>Status:</strong> <span class="${getStatusClass(charger.status)}">${charger.status}</span>
+        </div>
+        <button onclick="reserveCharger(${charger.pointid})" class="reserve-btn">Reserve</button>
+    `;
+
+    detailsPanel.style.display = 'block';
+}
+
+// Placeholder reserve function
+function reserveCharger(pointid) {
+    alert(`Charger ${pointid} reserved!`);
+}
+
+// Apply filters
+function applyFilters() {
+    const showAvailable = document.getElementById('filter-available').checked;
+    const showCharging = document.getElementById('filter-charging').checked;
+    const showReserved = document.getElementById('filter-reserved').checked;
+    const showMalfunction = document.getElementById('filter-malfunction').checked;
+    const showOffline = document.getElementById('filter-offline').checked;
+
+    const filtered = currentChargers.filter(charger => {
+        const status = charger.status.toLowerCase();
+        return (status === 'available' && showAvailable) ||
+               (status === 'charging' && showCharging) ||
+               (status === 'reserved' && showReserved) ||
+               (status === 'malfunction' && showMalfunction) ||
+               (status === 'offline' && showOffline);
+    });
+
+    createMarkers(filtered);
+}
+
+// Filter button event
+document.getElementById('apply-filters').addEventListener('click', applyFilters);
+
+// Initial markers
+applyFilters();
+fitMapToMarkers();
+</script>
+{% endblock %}

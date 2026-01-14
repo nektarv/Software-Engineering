@@ -15,15 +15,15 @@ FASTAPI_BACKEND_URL = "http://127.0.0.1:9876"
 @app.get("/map", response_class=HTMLResponse)
 async def map_page(request: Request):
     # Fetch chargers from FastAPI backend
-    # response = requests.get(f"{FASTAPI_BACKEND_URL}/api/chargers")
-    # chargers = response.json()
+    response = requests.get(f"{FASTAPI_BACKEND_URL}/api/points")
+    chargers = response.json()
     # map_html = generate_map(chargers)  # Optional Folium integration
 
     return templates.TemplateResponse("map.html", {
         "request": request,
         "active_page": "map",
         # "map_html": map_html,
-        # "chargers": chargers
+         "chargers": chargers
     })
 
 @app.get("/list", response_class=HTMLResponse)
