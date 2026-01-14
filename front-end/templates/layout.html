@@ -1,0 +1,86 @@
+<!-- frontend/templates/layout.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EV Charger Reservation System</title>
+    
+    <!-- Link to your CSS -->
+    <link rel="stylesheet" href="{{ request.url_for('static', path='css/style.css') }}">
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Page-specific head content -->
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <!-- Logo/Brand -->
+            <div class="nav-brand">
+                <a href="{{ request.url_for('map_page') }}" class="brand-link">
+                    <i class="fas fa-bolt"></i>
+                    <span class="brand-text">Our Name</span>
+                </a>
+            </div>
+            
+            <!-- Navigation Links -->
+            <div class="nav-links">
+                <!-- Map Button -->
+                <a href="{{ request.url_for('map_page') }}" 
+                   class="nav-link {% if active_page == 'map' %}active{% endif %}">
+                    <i class="fas fa-map-marked-alt"></i>
+                    <span class="link-text">Map View</span>
+                </a>
+                
+                <!-- List Button -->
+                <a href="{{ request.url_for('list_page') }}" 
+                   class="nav-link {% if active_page == 'list' %}active{% endif %}">
+                    <i class="fas fa-list"></i>
+                    <span class="link-text">List View</span>
+                </a>
+                
+                <!-- Statistics Button -->
+                <a href="{{ request.url_for('stats_page') }}" 
+                   class="nav-link {% if active_page == 'stats' %}active{% endif %}">
+                    <i class="fas fa-chart-bar"></i>
+                    <span class="link-text">Statistics</span>
+                </a>
+            </div>
+
+            <!-- Profile link -->
+            <div class="nav-profile">
+                <a href="#" class="nav-link profile-link">
+                    <i class="fas fa-user-circle"></i>
+                    <span class="link-text">Profile</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>EV Charger Reservation System &copy; 2024</p>
+            <p class="footer-status">
+                <i class="fas fa-circle status-indicator"></i>
+                <span>Backend Status: Connected</span>
+            </p>
+        </div>
+    </footer>
+
+    <!-- Link to your JavaScript -->
+    <script src="{{ request.url_for('static', path='js/main.js') }}"></script>
+    
+    <!-- Page-specific scripts -->
+    {% block scripts %}{% endblock %}
+</body>
+</html>
