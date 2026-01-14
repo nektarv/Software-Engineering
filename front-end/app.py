@@ -38,6 +38,16 @@ def _backend_delete(path: str):
         verify=VERIFY_TLS,
     )
 
+#Expirimental
+
+
+@app.get("/fetch-charger/{pointid}")
+def fetch_charger(pointid: str):
+    backend_url = f"{FASTAPI_BACKEND_URL}/api/point/{pointid}"
+    response = requests.get(backend_url)
+    return response.json()
+
+#Experimental over
 
 def _redirect_back(request: Request, fallback: str = "/list"):
     referer = request.headers.get("referer")
@@ -57,7 +67,8 @@ async def map_page(request: Request):
         "request": request,
         "active_page": "map",
         # "map_html": map_html,
-         "chargers": chargers
+         "chargers": chargers,
+        "backend_url":FASTAPI_BACKEND_URL
     })
 
 

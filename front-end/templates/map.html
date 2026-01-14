@@ -108,6 +108,7 @@ function createMarkers(chargers) {
     // Clear existing markers
     chargerMarkers.forEach(marker => map.removeLayer(marker));
     chargerMarkers = [];
+    const backendUrl = {{ backend_url | tojson | safe }};
 
     chargers.forEach(charger => {
         const marker = L.circleMarker([charger.lat, charger.lon], {
@@ -125,25 +126,62 @@ function createMarkers(chargers) {
 }
 
 // Show charger details
+// Show charger details with API call
 function showChargerDetails(charger) {
+    console.log("CLICK", performance.now());
     const detailsPanel = document.getElementById('charger-details');
     const contentDiv = document.getElementById('charger-info-content');
 
+    // Show loading state
     contentDiv.innerHTML = `
         <div class="charger-detail-item">
-            <strong>ID:</strong> ${charger.pointid}
+            <strong>Loading charger details...</strong>
         </div>
-        <div class="charger-detail-item">
-            <strong>Capacity:</strong> ${charger.cap} kW
-        </div>
-        <div class="charger-detail-item">
-            <strong>Status:</strong> <span class="${getStatusClass(charger.status)}">${charger.status}</span>
-        </div>
-        <button onclick="reserveCharger(${charger.pointid})" class="reserve-btn">Reserve</button>
     `;
 
     detailsPanel.style.display = 'block';
+
+    // Make API call to frontend endpoint (browser -> frontend -> backend)
+    console.log("FETCH START", performance.now());
+    fetch(`/fetch-charger/${charger.pointid}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(chargerData => {
+            // Display the charger data
+            contentDiv.innerHTML = `
+                <div class="charger-detail-item">
+                    <strong>Full Charger Data:</strong>
+                </div>
+                <pre style="background: #f5f5f5; padding: 10px; border-radius: 5px; overflow: auto; max-height: 300px;">
+${JSON.stringify(chargerData, null, 2)}
+                </pre>
+                <div class="charger-detail-item">
+                    <strong>Status:</strong> <span class="${getStatusClass(chargerData.status)}">${chargerData.status}</span>
+                </div>
+                <button onclick="reserveCharger(${chargerData.pointid})" class="reserve-btn">Reserve</button>
+            `;
+        })
+        .catch(error => {
+            console.error('Error fetching charger details:', error);
+            contentDiv.innerHTML = `
+                <div class="charger-detail-item">
+                    <strong>Error loading charger details</strong>
+                </div>
+                <div class="charger-detail-item">
+                    <strong>ID:</strong> ${charger.pointid}
+                </div>
+                <div class="charger-detail-item">
+                    <strong>Status:</strong> <span class="${getStatusClass(charger.status)}">${charger.status}</span>
+                </div>
+                <button onclick="reserveCharger(${charger.pointid})" class="reserve-btn">Reserve</button>
+            `;
+        });
 }
+
 
 // Placeholder reserve function
 function reserveCharger(pointid) {
