@@ -14,6 +14,10 @@ from endpoints.pointstatus import router as pointstatus_router
 from endpoints.authentication import router as auth_router
 from endpoints.authentication_v2 import router as auth_router_v2 # will probably remove
 from endpoints.userStats import router as userStats_router
+from endpoints.chargers import router as chargers_router
+from endpoints.favorites import router as favorites_router
+
+
 
 app = FastAPI()
 
@@ -36,6 +40,8 @@ app.include_router(pointstatus_router)
 
 # use cases
 app.include_router(userStats_router)
+app.include_router(chargers_router)
+app.include_router(favorites_router)
 
 def custom_openapi():
     if app.openapi_schema:
@@ -51,7 +57,7 @@ def custom_openapi():
     # force HTTPS in Swagger UI
     openapi_schema["servers"] = [
         {
-            "url": "https://localhost:9876",
+            "url": "http://localhost:9876",  #cahnge ot to https later if issue is fixed
             "description": "Local HTTPS server"
         }
     ]
