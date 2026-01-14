@@ -6,7 +6,7 @@ import mysql.connector
 DB_CONFIG = {
     "host": "localhost",
     "user": "root",
-    "password": "root", #change it back to root before commit
+    "password": "ElectroWay", #change it back to root before commit
     "database": "charging_database",
 }
 

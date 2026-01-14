@@ -57,7 +57,7 @@ def custom_openapi():
     # force HTTPS in Swagger UI
     openapi_schema["servers"] = [
         {
-            "url": "https://localhost:9876",
+            "url": "http://localhost:9876",  #cahnge ot to https later if issue is fixed
             "description": "Local HTTPS server"
         }
     ]

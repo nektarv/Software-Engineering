@@ -1,0 +1,18 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div style="max-width:600px;margin:0 auto;padding:1.5rem 1rem;">
+  <h2>Login (Placeholder)</h2>
+  <p class="muted">This is a temporary page until real authentication is implemented.</p>
+
+  <form method="post" action="/login" style="margin-top:1rem;display:flex;gap:0.75rem;align-items:center;">
+    <label>User ID:</label>
+    <input name="userid" type="number" min="1" required class="filter-input">
+    <button type="submit" class="filter-btn">Log in</button>
+  </form>
+
+  <form method="post" action="/logout" style="margin-top:1rem;">
+    <button type="submit" class="filter-btn secondary">Log out</button>
+  </form>
+</div>
+{% endblock %}
