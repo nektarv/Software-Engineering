@@ -10,7 +10,7 @@ class LoginRequest(BaseModel):
     username: str
     password: str
 
-@router.post("/login")
+@router.post("/authentication")
 async def login(login_data: LoginRequest, request: Request):
     conn = None
     cursor = None

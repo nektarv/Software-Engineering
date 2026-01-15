@@ -223,17 +223,72 @@ async def stats_page(request: Request):
         },
     )
 
-@app.get("/login", response_class=HTMLResponse, name="login_page")
-async def login_page(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
+@app.get("/authentication", response_class=HTMLResponse, name="login_page")
+async def login_page(request: Request, error: str = None):
+    """Display login page - now with optional error message"""
+    return templates.TemplateResponse(
+        "authentication.html", 
+        {
+            "request": request,
+            "error": error
+        }
+    )
 
-
-
-@app.post("/login")
-async def login_submit(request: Request, userid: int = Form(...)):
-    resp = RedirectResponse(url="/list", status_code=303)
-    resp.set_cookie("userid", str(userid), httponly=True)
-    return resp
+@app.post("/authentication")
+async def login_submit(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...)
+):
+    """Handle login form submission"""
+    try:
+        auth_response = requests.post(
+            f"{FASTAPI_BACKEND_URL}/api/authentication/authentication",
+            json={"username": username, "password": password},
+            verify=False
+        )
+        
+        # Get the status code from backend
+        backend_status = auth_response.status_code
+        
+        if backend_status == 200:
+            # Backend says SUCCESS
+            user_data = auth_response.json()
+            
+            # Redirect to MAP page (not list)
+            response = RedirectResponse(url="/map", status_code=303)
+            response.set_cookie("userid", str(user_data["userid"]), httponly=True)
+            response.set_cookie("username", user_data["username"], httponly=True)
+            return response
+            
+        else:
+            # Backend says ERROR (400, 500, etc)
+            try:
+                error_data = auth_response.json()
+                error_msg = error_data.get("error", "Authentication failed")
+            except:
+                error_msg = "Authentication failed"
+            
+            # Return login page with same status code as backend
+            return templates.TemplateResponse(
+                "authentication.html",
+                {
+                    "request": request,
+                    "error": f"Error {backend_status}: {error_msg}"
+                },
+                status_code=backend_status  # Match backend status
+            )
+            
+    except requests.exceptions.ConnectionError:
+        # Frontend can't reach backend
+        return templates.TemplateResponse(
+            "authentication.html",
+            {
+                "request": request,
+                "error": "Cannot connect to authentication server"
+            },
+            status_code=500
+        )
 
 @app.post("/logout")
 async def logout():
