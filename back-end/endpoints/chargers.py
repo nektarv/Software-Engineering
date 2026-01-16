@@ -307,3 +307,42 @@ def list_chargers(
     except Exception as e:
         payload = build_error_log(request, 500, "Internal server error", str(e))
         return JSONResponse(status_code=500, content=payload)
+
+
+
+@router.get("/connectors")
+def get_available_connectors(request: Request):
+    """
+    Returns all unique connector types available in the database.
+    Used to populate the connector filter dropdown dynamically.
+    """
+    try:
+        conn = mysql.connector.connect(**DB_CONFIG)
+        cur = conn.cursor(dictionary=True)
+        
+        # Fetch distinct connectors, ordered alphabetically
+        cur.execute("""
+            SELECT DISTINCT connector 
+            FROM outlet 
+            WHERE connector IS NOT NULL 
+            ORDER BY connector ASC
+        """)
+        
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+        
+        if not rows:
+            return Response(status_code=204)
+        
+        # Return array of connector strings
+        connectors = [row["connector"] for row in rows]
+        return connectors
+        
+    except mysql.connector.Error as e:
+        payload = build_error_log(request, 400, "Database error", str(e))
+        return JSONResponse(status_code=400, content=payload)
+    except Exception as e:
+        payload = build_error_log(request, 500, "Internal server error", str(e))
+        return JSONResponse(status_code=500, content=payload)
+

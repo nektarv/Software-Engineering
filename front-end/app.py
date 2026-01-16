@@ -3,6 +3,10 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 import requests
+import urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 
 app = FastAPI()
 
@@ -114,6 +118,7 @@ async def list_page(
     min_power_i = _to_int_or_none(min_power)
     max_power_i = _to_int_or_none(max_power)
 
+
     userid_cookie = request.cookies.get("userid")
     username_cookie = request.cookies.get("username")
     userid_i = None
@@ -123,11 +128,13 @@ async def list_page(
     except Exception:
         userid_i = None
 
+
     warning = None
     effective_favourites_only = favourites_only
     if favourites_only == 1 and userid_i is None:
         warning = "You need to be logged in to view favourites."
         effective_favourites_only = 0
+
 
     params = {
         "format": "json",
@@ -142,9 +149,11 @@ async def list_page(
     if price_time: params["price_time"] = price_time
     if userid_i is not None: params["userid"] = userid_i
 
+
     chargers = []
     api_error = None
     api_error_details = None
+
 
     try:
         r = _backend_get("/api/chargers", params=params)
@@ -162,6 +171,17 @@ async def list_page(
         api_error = "Network error"
         api_error_details = {"raw": str(e)}
 
+
+    # Fetch available connectors from backend
+    available_connectors = []
+    try:
+        connectors_response = _backend_get("/api/connectors")
+        if connectors_response.status_code == 200:
+            available_connectors = connectors_response.json()
+    except Exception:
+        available_connectors = []
+
+
     filters = {
         "min_price": "" if min_price_f is None else str(min_price_f),
         "max_price": "" if max_price_f is None else str(max_price_f),
@@ -173,6 +193,7 @@ async def list_page(
         "favourites_only": favourites_only,
     }
 
+
     return templates.TemplateResponse(
         "list.html",
         {
@@ -180,6 +201,7 @@ async def list_page(
             "active_page": "list",
             "chargers": chargers,
             "filters": filters,
+            "available_connectors": available_connectors,
             "api_error": api_error,
             "api_error_details": api_error_details,
             "warning": warning,

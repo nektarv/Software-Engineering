@@ -1,6 +1,7 @@
 {% extends "layout.html" %}
 {% set active_page = "list" %}
 
+
 {% if warning %}
   <div class="notice">
     {{ warning }}
@@ -9,6 +10,7 @@
     </div>
   </div>
 {% endif %}
+
 
 {% block head %}
 <style>
@@ -85,6 +87,7 @@
   }
   .muted { color:#777; font-size: 0.92rem; }
 
+
   @media (max-width: 900px) {
     .charger-row { grid-template-columns: 2fr 1fr 1fr auto; }
     .hide-sm { display:none; }
@@ -99,8 +102,10 @@
 {% endblock %}
 
 
+
 {% block content %}
 <div class="list-page">
+
 
   {% if api_error %}
     <div class="notice">
@@ -111,10 +116,12 @@
     </div>
   {% endif %}
 
+
   <form class="filters-bar" method="get" action="/list">
     <div class="filter-group">
       <span class="filter-label"><i class="fa-solid fa-filter"></i> Filters</span>
     </div>
+
 
     <div class="filter-group">
       <span class="filter-label">Price €/kWh</span>
@@ -122,20 +129,23 @@
       <input name="max_price" class="filter-input filter-small" type="number" step="0.0001" placeholder="Max" value="{{ filters.max_price }}">
     </div>
 
+
     <div class="filter-group">
       <span class="filter-label"><i class="fa-solid fa-location-dot"></i> Location</span>
       <input name="location_q" class="filter-input" type="text" placeholder="Search name/address" value="{{ filters.location_q }}">
     </div>
 
+
     <div class="filter-group">
       <span class="filter-label">Connector</span>
       <select name="connector" class="filter-select">
-        <option value="" {% if filters.connector == "" %}selected{% endif %}>Any</option>
-        <option value="Type2" {% if filters.connector == "Type2" %}selected{% endif %}>Type2</option>
-        <option value="CCS" {% if filters.connector == "CCS" %}selected{% endif %}>CCS</option>
-        <option value="CHAdeMO" {% if filters.connector == "CHAdeMO" %}selected{% endif %}>CHAdeMO</option>
+        <option value="">Any</option>
+        {% for conn in available_connectors %}
+          <option value="{{ conn }}" {% if filters.connector == conn %}selected{% endif %}>{{ conn }}</option>
+        {% endfor %}
       </select>
     </div>
+
 
     <div class="filter-group">
       <span class="filter-label">Charge rate (kW)</span>
@@ -143,10 +153,12 @@
       <input name="max_power" class="filter-input filter-small" type="number" step="1" placeholder="Max" value="{{ filters.max_power }}">
     </div>
 
+
     <div class="filter-group">
       <span class="filter-label"><i class="fa-regular fa-clock"></i> Time</span>
       <input name="price_time" class="filter-input" type="text" placeholder="YYYYMMDDHH (blank=current)" value="{{ filters.price_time }}">
     </div>
+
 
     <div class="filter-group">
       <label class="filter-label" style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
@@ -155,11 +167,13 @@
       </label>
     </div>
 
+
     <div class="filter-group">
       <button class="filter-btn" type="submit">Apply</button>
       <a class="filter-btn secondary" href="/list">Clear</a>
     </div>
   </form>
+
 
   <div class="results">
     {% if chargers|length == 0 %}
@@ -172,9 +186,11 @@
             <div class="charger-sub">{{ c.address }}</div>
           </div>
 
+
           <div><span class="badge">€ {{ "%.4f"|format(c.kwhprice) }}/kWh</span></div>
           <div><span class="badge">{{ c.connector }}</span></div>
           <div><span class="badge">{{ c.power }} kW</span></div>
+
 
          <div>
   {% if is_logged_in %}
