@@ -129,11 +129,13 @@ async def list_page(
         userid_i = None
 
 
+    # Αν ο χρήστης ζητάει αγαπημένα και δεν είναι συνδεδεμένος τοτε Redirect
+    if favourites_only == 1 and userid_i is None:
+        return RedirectResponse(url="/authentication", status_code=303)
+
+    # Αν δεν γίνει redirect, ορίζουμε τις μεταβλητές κανονικά
     warning = None
     effective_favourites_only = favourites_only
-    if favourites_only == 1 and userid_i is None:
-        warning = "You need to be logged in to view favourites."
-        effective_favourites_only = 0
 
 
     params = {
