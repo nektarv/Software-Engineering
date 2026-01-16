@@ -206,7 +206,9 @@
       </form>
     {% endif %}
   {% else %}
-    <span class="muted" title="Log in to use favourites">☆</span>
+    <a href="{{ request.url_for('login_page') }}" class="star-btn muted" style="text-decoration: none;" title="Log in to use favourites">
+      ☆
+    </a>
   {% endif %}
 </div>
           <!-- "See on map" behavior: link only if backend says allowed -->
