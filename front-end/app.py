@@ -243,19 +243,47 @@ async def favourites_remove(
     return _redirect_back(request, fallback="/list")
 
 @app.get("/stats", response_class=HTMLResponse, name="stats_page")
-async def stats_page(request: Request):
-    """Statistics page"""
-    userid = request.cookies.get("userid")
-    username = request.cookies.get("username")
+async def stats_page(request: Request, range: int = 30):
+    # 1. Παίρνουμε το userid από το cookie (όπως κάνεις και στο /list)
+    userid_cookie = request.cookies.get("userid")
     
+    # Αν δεν είναι συνδεδεμένος, στείλτον στο login
+    if not userid_cookie:
+        return RedirectResponse(url="/authentication", status_code=303)
+    
+    try:
+        userid_i = int(userid_cookie)
+    except Exception:
+        return RedirectResponse(url="/authentication", status_code=303)
+
+    # 2. Μετατρέπουμε τις ημέρες (7, 30, 365) σε λεπτά για το API σου
+    minutes = range * 24 * 60 
+
+    stats_data = {}
+    try:
+        # 3. Καλούμε το API statistics (user_stats.py)
+        # Προσοχή: Το endpoint σου είναι /api/user/statistics
+        r = _backend_get("/api/user/statistics", params={
+            "userid": userid_i, 
+            "minutes": minutes
+        })
+        
+        if r.status_code == 200:
+            stats_data = r.json()
+        else:
+            print(f"Backend Error: {r.status_code}") # Για debugging
+    except Exception as e:
+        print(f"Network Error: {e}")
+
+    # 4. Στέλνουμε τα δεδομένα στο stats.html
     return templates.TemplateResponse(
         "stats.html",
         {
             "request": request,
             "active_page": "stats",
-            "is_logged_in": userid is not None,
-            "username": username,
-            "userid": userid
+            "stats": stats_data,        # Τα δεδομένα από τη βάση
+            "current_range": range,     # Για να ξέρει το dropdown τι να δείξει
+            "userid": userid_i          # Για τα JavaScript calls (favorites)
         },
     )
 
