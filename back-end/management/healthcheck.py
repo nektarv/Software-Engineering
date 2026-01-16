@@ -4,7 +4,7 @@ import mysql.connector
 
 from utils import DB_CONFIG, build_error_log
 
-router = APIRouter()  
+router = APIRouter(tags=["management"]) 
 
 
 

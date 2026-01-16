@@ -41,7 +41,7 @@ def build_error_log(request: Request, code: int, error_text: str, raw_debuginfo:
         "call": str(request.url),
         "timeref": datetime.now().strftime("%Y-%m-%d %H:%M"),
         "originator": originator_value,
-        "returncode": code,
+        "return_code": code,
         "error": description,
         "debuginfo": f"{error_text}: {raw_debuginfo}",
     }

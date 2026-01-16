@@ -12,7 +12,7 @@ from pathlib import Path
 from management.resetpoints_extractor import insert_from_json
 
 
-router = APIRouter()
+router = APIRouter(tags=["management"])
 
 
 @router.post("/api/admin/resetpoints")
