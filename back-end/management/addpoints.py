@@ -36,7 +36,7 @@ def get_or_create_station(cursor, address, lat, lon, name, provider):
     return cursor.lastrowid
 
 
-router = APIRouter()
+router = APIRouter(tags=["management"])
 
 
 @router.post("/api/admin/addpoints")
