@@ -1,0 +1,370 @@
+//δεν εχει συνδεθει με endpoints ειναι μονο το layout
+
+{% extends "layout.html" %}
+{% set active_page = "statistics" %}
+
+{% block head %}
+{{ super() }}
+<style>
+/* ===== CONTAINER ===== */
+.stats-container {
+    padding: 40px;
+    max-width: 1800px;
+    margin: 0 auto;
+}
+
+/* ===== DROPDOWN / CONTROLS ===== */
+.stats-controls {
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.stats-controls label {
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.stats-controls select {
+    padding: 8px 12px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}
+
+/* ===== MAIN LAYOUT: 2 COLUMNS ===== */
+.main-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Δύο ίσα μέρη */
+    gap: 20px;
+    align-items: start;
+}
+
+/* ===== ΑΡΙΣΤΕΡΗ ΣΤΗΛΗ: Κουτιά + 2 Διαγράμματα ===== */
+.left-column {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Τα 3 κουτιά */
+.summary-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+}
+
+.card {
+    background: white;
+    padding: 20px 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    text-align: center;
+    border-left: 4px solid #1a73e8;
+}
+
+.card h3 {
+    font-size: 1 rem;
+    color: #666;
+    margin: 0 0 10px 0;
+    font-weight: bold;
+}
+
+.card p {
+    font-size: 2 rem;
+    color: #666;
+    margin: 0;
+    font-weight: normal;
+}
+
+/* Τα 2 διαγράμματα πάνω-κάτω */
+.left-charts {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* ===== ΔΕΞΙΑ ΣΤΗΛΗ: Top Chargers + 3ο Διάγραμμα ===== */
+.right-column {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* ===== TOP CHARGERS ===== */
+.top-chargers {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    max-height: 400px; /* Π.χ. 400px, μπορείς να αλλάξεις */
+    overflow-y: auto;  /* Εμφάνιση scrollbar όταν χρειάζεται */
+}
+
+.top-chargers h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #2c3e50;
+    font-size: 1.2rem;
+}
+
+.top-chargers table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.top-chargers th, .top-chargers td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.top-chargers th {
+    background-color: #f5f5f5;
+    color: #2c3e50;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.top-chargers::-webkit-scrollbar {
+    width: 6px;
+}
+
+.top-chargers::-webkit-scrollbar-thumb {
+    background-color: rgba(0,0,0,0.2);
+    border-radius: 3px;
+}
+
+.top-chargers tr:last-child td {
+    border-bottom: none;
+}
+
+/* Στυλ για το αστεράκι */
+.favorite-star {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: #ccc;
+    transition: color 0.2s;
+    padding: 0;
+    line-height: 1;
+}
+
+.favorite-star:hover {
+    color: #ffd700;
+}
+
+.favorite-star.active {
+    color: #ffd700;
+}
+
+/* ===== ΔΙΑΓΡΑΜΜΑΤΑ ===== */
+.chart-card {
+    background: rgb(255, 255, 255);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    height: 100%;
+    min-height: 250px;
+}
+
+.chart-header {
+    margin-bottom: 15px;
+}
+
+.chart-header h3 {
+    margin: 0;
+    color: #2c3e50;
+}
+
+.chart-placeholder {
+    width: 100%;
+    height: 300px;
+    background: #f9f9f9;
+    border: 2px dashed #ddd;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    font-style: italic;
+}
+
+/* RESPONSIVE */
+@media (max-width: 1100px) {
+    .main-layout {
+        grid-template-columns: 1fr;
+    }
+    
+    .summary-cards {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .summary-cards {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="stats-container">
+
+    <!-- Dropdown επιλογής χρονικού διαστήματος -->
+    <div class="stats-controls">
+        <label for="time-range">Show me statistics for:</label>
+        <select id="time-range">
+            <option value="7">This week</option>
+            <option value="30" selected>This month</option>
+            <option value="180">The last 6 months</option>
+            <option value="365">This year</option>
+        </select>
+    </div>
+
+    <!-- MAIN LAYOUT: 2 ΣΤΗΛΕΣ -->
+    <div class="main-layout">
+        <!-- ΑΡΙΣΤΕΡΗ ΣΤΗΛΗ -->
+        <div class="left-column">
+            <!-- Τα 3 κουτιά -->
+            <div class="summary-cards">
+                <div class="card">
+                    <h3>You charged</h3>
+                    <p>12 Hours & 45 Minutes</p>
+                </div>
+                <div class="card">
+                    <h3>You charged</h3>
+                    <p>28 Times</p>
+                </div>
+                <div class="card">
+                    <h3>You spent</h3>
+                    <p>285.50€</p>
+                </div>
+            </div>
+
+            <!-- Τα 2 διαγράμματα πάνω-κάτω -->
+            <div class="left-charts">
+                <!-- DIAGRAM 1 -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Charging Cost Over Time</h3>
+                    </div>
+                    <div class="chart-placeholder">
+                        DIAGRAM 1
+                    </div>
+                </div>
+                
+                <!-- DIAGRAM 2 -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Energy Usage Pattern</h3>
+                    </div>
+                    <div class="chart-placeholder">
+                        DIAGRAM 2
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ΔΕΞΙΑ ΣΤΗΛΗ -->
+        <div class="right-column">
+            <!-- Top Chargers -->
+            <div class="top-chargers">
+                <h3>Top Chargers</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Favorite</th>
+                            <th>Name</th>
+                            <th>Location</th>
+                            <th>Type</th>
+                            <th>Times Used</th>
+                            <th>Money Spent</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <button class="favorite-star active" title="Add to favorites">★</button>
+                            </td>
+                            <td>Station Alpha</td>
+                            <td>Athens Center</td>
+                            <td>Fast</td>
+                            <td>15</td>
+                            <td>120€</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <button class="favorite-star" title="Add to favorites">☆</button>
+                            </td>
+                            <td>Station Beta</td>
+                            <td>Thessaloniki Port</td>
+                            <td>Standard</td>
+                            <td>8</td>
+                            <td>85€</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <button class="favorite-star" title="Add to favorites">☆</button>
+                            </td>
+                            <td>Station Gamma</td>
+                            <td>Patras Plaza</td>
+                            <td>Fast</td>
+                            <td>5</td>
+                            <td>65€</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <button class="favorite-star active" title="Add to favorites">★</button>
+                            </td>
+                            <td>Station Delta</td>
+                            <td>Heraklion Mall</td>
+                            <td>Standard</td>
+                            <td>4</td>
+                            <td>45€</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <button class="favorite-star" title="Add to favorites">☆</button>
+                            </td>
+                            <td>Station Gamma</td>
+                            <td>Patras Plaza</td>
+                            <td>Fast</td>
+                            <td>5</td>
+                            <td>65€</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- DIAGRAM 3 -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3>Charging Location Distribution</h3>
+                </div>
+                <div class="chart-placeholder">
+                    DIAGRAM 3
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Απλό script για τα αστεράκια
+document.querySelectorAll('.favorite-star').forEach(star => {
+    star.addEventListener('click', function() {
+        if (this.textContent === '☆') {
+            this.textContent = '★';
+            this.classList.add('active');
+        } else {
+            this.textContent = '☆';
+            this.classList.remove('active');
+        }
+    });
+});
+</script>
+{% endblock %}
