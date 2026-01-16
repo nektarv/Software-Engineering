@@ -109,12 +109,6 @@ async def list_page(
     favourites_only: int = 0,
 ):
     """Charger listing page with filters"""
-
-    userid_cookie = request.cookies.get("userid")
-    if not userid_cookie:
-        # Redirect to authentication if not logged in
-        return RedirectResponse(url="/authentication", status_code=303)
-
     min_price_f = _to_float_or_none(min_price)
     max_price_f = _to_float_or_none(max_price)
     min_power_i = _to_int_or_none(min_power)
@@ -200,7 +194,7 @@ async def favourites_add(request: Request, stationid: int = Form(...)):
     """Add charger to favourites"""
     userid_cookie = request.cookies.get("userid")
     if not userid_cookie:
-        return RedirectResponse(url="/authentication", status_code=303)  # FIXED: /authentication not /login
+        return RedirectResponse(url="/authentication", status_code=303)
     
     try:
         userid_i = int(userid_cookie)
