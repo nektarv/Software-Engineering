@@ -360,14 +360,82 @@ async def logout():
     resp.delete_cookie("username")
     return resp
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(
-        "app:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True
+
+@app.get("/register", response_class=HTMLResponse, name="register_page")
+async def register_page(request: Request, error: str = None):
+    """Registration page"""
+    return templates.TemplateResponse(
+        "register.html", 
+        {
+            "request": request,
+            "error": error
+        }
     )
+
+@app.post("/register")
+async def register_submit(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+    confirm_password: str = Form(...)
+):
+    """Handle registration form submission"""
+    try:
+        # frontend validation
+        if password != confirm_password:
+            return templates.TemplateResponse(
+                "register.html",
+                {
+                    "request": request,
+                    "error": "Passwords do not match"
+                },
+                status_code=400
+            )
+        
+        # Call backend register endpoint
+        auth_response = _backend_post(
+            "/api/authentication/register",
+            json_data={"username": username, "password": password}
+        )
+        
+        backend_status = auth_response.status_code
+        
+        if backend_status == 200:
+            # Registration successful - auto-login user
+            user_data = auth_response.json()
+            
+            # Set cookies and redirect (auto-login)
+            response = RedirectResponse(url="/map", status_code=303)
+            response.set_cookie("userid", str(user_data["userid"]), httponly=True)
+            response.set_cookie("username", user_data["username"], httponly=True)
+            return response
+            
+        else:
+            # Registration failed
+            try:
+                error_data = auth_response.json()
+                error_msg = error_data.get("error", "Registration failed")
+            except:
+                error_msg = "Registration failed"
+            
+            return templates.TemplateResponse(
+                "register.html",
+                {
+                    "request": request,
+                    "error": f"Error {backend_status}: {error_msg}"
+                },
+                status_code=backend_status
+            )
+            
+    except requests.exceptions.ConnectionError:
+        return templates.TemplateResponse(
+            "register.html",
+            {
+                "request": request,
+                "error": "Cannot connect to server"
+            },
+            status_code=500
+        )
 
 if __name__ == "__main__":
     import uvicorn
