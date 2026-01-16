@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS `charging_database`.`station` (
   `address` VARCHAR(100) NULL,
   `Latitude` DECIMAL(6,4) NOT NULL,
   `Longitude` DECIMAL(7,4) NOT NULL,
-  `name` VARCHAR(45) NULL,
+  `name` VARCHAR(255) NULL,
   `provider` VARCHAR(45) NULL,
   PRIMARY KEY (`stationid`),
   INDEX `provider_idx` (`provider` ASC) VISIBLE,
