@@ -45,18 +45,40 @@
                 
                 <!-- Statistics Button -->
                 <a href="{{ request.url_for('stats_page') }}" 
-                   class="nav-link {% if active_page == 'stats' %}active{% endif %}">
+                   class="nav-link {% if active_page == 'list' %}active{% endif %}">
                     <i class="fas fa-chart-bar"></i>
                     <span class="link-text">Statistics</span>
                 </a>
             </div>
 
-            <!-- Profile link -->
+            <!-- Authentication Section -->
             <div class="nav-profile">
-                <a href="#" class="nav-link profile-link">
-                    <i class="fas fa-user-circle"></i>
-                    <span class="link-text">Profile</span>
-                </a>
+                {% if is_logged_in %}
+                    <!-- Logged in state -->
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="display: flex; align-items: center; gap: 8px; color: #333;">
+                            <i class="fas fa-user-circle" style="color: #4CAF50; font-size: 1.2em;"></i>
+                            <div>
+                                <div style="font-weight: 500; font-size: 0.95em;">{{ username }}</div>
+                                <div style="font-size: 0.8em; color: #666;">ID: {{ userid }}</div>
+                            </div>
+                        </div>
+                        <form method="POST" action="/logout" style="margin: 0;">
+                            <button type="submit" 
+                                    style="background: #f8f9fa; color: #666; border: 1px solid #dee2e6;
+                                           padding: 5px 10px; border-radius: 4px; cursor: pointer;
+                                           font-size: 0.9em; transition: all 0.2s;">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </button>
+                        </form>
+                    </div>
+                {% else %}
+                    <!-- Not logged in state -->
+                    <a href="/authentication" class="nav-link">
+                        <i class="fas fa-sign-in-alt"></i>
+                        <span class="link-text">Login</span>
+                    </a>
+                {% endif %}
             </div>
         </div>
     </nav>

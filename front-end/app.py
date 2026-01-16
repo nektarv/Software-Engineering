@@ -9,68 +9,35 @@ app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-#  change this back to "https://127.0.0.1:9876" when everything figured out 
-FASTAPI_BACKEND_URL = "http://localhost:9876"
-VERIFY_TLS = True
+FASTAPI_BACKEND_URL = "https://localhost:9876"
+VERIFY_SSL = False # need it false for self-signed certificates
 
-
-def _backend_get(path: str, params: dict):
+def _backend_get(path: str, params: dict = None):
     return requests.get(
         f"{FASTAPI_BACKEND_URL}{path}",
         params=params,
         timeout=10,
-        verify=VERIFY_TLS,
+        verify=VERIFY_SSL,
     )
 
-
-def _backend_post(path: str):
+def _backend_post(path: str, json_data: dict = None):
     return requests.post(
         f"{FASTAPI_BACKEND_URL}{path}",
+        json=json_data,
         timeout=10,
-        verify=VERIFY_TLS,
+        verify=VERIFY_SSL,
     )
-
 
 def _backend_delete(path: str):
     return requests.delete(
         f"{FASTAPI_BACKEND_URL}{path}",
         timeout=10,
-        verify=VERIFY_TLS,
+        verify=VERIFY_SSL,
     )
-
-#Expirimental
-
-
-@app.get("/fetch-charger/{pointid}")
-def fetch_charger(pointid: str):
-    backend_url = f"{FASTAPI_BACKEND_URL}/api/point/{pointid}"
-    response = requests.get(backend_url)
-    return response.json()
-
-#Experimental over
 
 def _redirect_back(request: Request, fallback: str = "/list"):
     referer = request.headers.get("referer")
     return RedirectResponse(url=referer or fallback, status_code=303)
-
-
-@app.get("/", response_class=HTMLResponse, name="map_page")
-@app.get("/map", response_class=HTMLResponse)
-async def map_page(request: Request):
-
-    # Fetch chargers from FastAPI backend
-    response = requests.get(f"{FASTAPI_BACKEND_URL}/api/points")
-    chargers = response.json()
-    # map_html = generate_map(chargers)  # Optional Folium integration
-
-    return templates.TemplateResponse("map.html", {
-        "request": request,
-        "active_page": "map",
-        # "map_html": map_html,
-         "chargers": chargers,
-        "backend_url":FASTAPI_BACKEND_URL
-    })
-
 
 def _to_float_or_none(x):
     if x is None:
@@ -82,7 +49,6 @@ def _to_float_or_none(x):
     except Exception:
         return None
 
-
 def _to_int_or_none(x):
     if x is None:
         return None
@@ -92,6 +58,43 @@ def _to_int_or_none(x):
         return int(x)
     except Exception:
         return None
+
+@app.get("/fetch-charger/{pointid}")
+def fetch_charger(pointid: str):
+    """Experimental endpoint - fetch single charger"""
+    backend_url = f"{FASTAPI_BACKEND_URL}/api/point/{pointid}"
+    response = requests.get(backend_url, verify=VERIFY_SSL)
+    return response.json()
+
+@app.get("/", response_class=HTMLResponse, name="map_page")
+@app.get("/map", response_class=HTMLResponse)
+async def map_page(request: Request):
+    """Homepage with charger map - MUST WORK WITHOUT LOGIN"""
+    userid = request.cookies.get("userid")
+    username = request.cookies.get("username")
+    
+    chargers = []
+    backend_error = None
+    
+    try:
+        response = _backend_get("/api/points")
+        if response.status_code == 200:
+            chargers = response.json()
+        else:
+            backend_error = f"Backend returned {response.status_code}"
+    except Exception as e:
+        backend_error = f"Cannot load chargers: {str(e)}"
+
+    return templates.TemplateResponse("map.html", {
+        "request": request,
+        "active_page": "map",
+        "chargers": chargers,
+        "backend_url": FASTAPI_BACKEND_URL,
+        "is_logged_in": userid is not None,
+        "username": username,
+        "userid": userid,
+        "backend_error": backend_error
+    })
 
 @app.get("/list", response_class=HTMLResponse, name="list_page")
 async def list_page(
@@ -105,13 +108,14 @@ async def list_page(
     price_time: str | None = None,
     favourites_only: int = 0,
 ):
+    """Charger listing page with filters"""
     min_price_f = _to_float_or_none(min_price)
     max_price_f = _to_float_or_none(max_price)
     min_power_i = _to_int_or_none(min_power)
     max_power_i = _to_int_or_none(max_power)
 
-    # userid comes from cookie (placeholder "login")
     userid_cookie = request.cookies.get("userid")
+    username_cookie = request.cookies.get("username")
     userid_i = None
     try:
         if userid_cookie:
@@ -119,12 +123,11 @@ async def list_page(
     except Exception:
         userid_i = None
 
-    # If user not logged in and asked for favourites-only → show warning and treat as off
     warning = None
     effective_favourites_only = favourites_only
     if favourites_only == 1 and userid_i is None:
         warning = "You need to be logged in to view favourites."
-        effective_favourites_only = 0  # prevent backend 400
+        effective_favourites_only = 0
 
     params = {
         "format": "json",
@@ -181,24 +184,25 @@ async def list_page(
             "api_error_details": api_error_details,
             "warning": warning,
             "is_logged_in": userid_i is not None,
+            "username": username_cookie,
             "userid": userid_i,
         },
     )
 
-
-
 @app.post("/favourites/add")
 async def favourites_add(request: Request, stationid: int = Form(...)):
+    """Add charger to favourites"""
     userid_cookie = request.cookies.get("userid")
     if not userid_cookie:
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url="/authentication", status_code=303)  # FIXED: /authentication not /login
+    
     try:
         userid_i = int(userid_cookie)
         _backend_post(f"/api/favourites/{userid_i}/{stationid}")
     except Exception:
         pass
+    
     return _redirect_back(request, fallback="/list")
-
 
 @app.post("/favourites/remove")
 async def favourites_remove(
@@ -206,26 +210,34 @@ async def favourites_remove(
     userid: int = Form(...),
     stationid: int = Form(...),
 ):
+    """Remove charger from favourites"""
     try:
         _backend_delete(f"/api/favourites/{userid}/{stationid}")
     except Exception:
         pass
+    
     return _redirect_back(request, fallback="/list")
-
 
 @app.get("/stats", response_class=HTMLResponse, name="stats_page")
 async def stats_page(request: Request):
+    """Statistics page"""
+    userid = request.cookies.get("userid")
+    username = request.cookies.get("username")
+    
     return templates.TemplateResponse(
         "stats.html",
         {
             "request": request,
             "active_page": "stats",
+            "is_logged_in": userid is not None,
+            "username": username,
+            "userid": userid
         },
     )
 
 @app.get("/authentication", response_class=HTMLResponse, name="login_page")
 async def login_page(request: Request, error: str = None):
-    """Display login page - now with optional error message"""
+    """Authentication page"""
     return templates.TemplateResponse(
         "authentication.html", 
         {
@@ -240,47 +252,45 @@ async def login_submit(
     username: str = Form(...),
     password: str = Form(...)
 ):
-    """Handle login form submission"""
+    """Handle authentication form submission"""
     try:
-        auth_response = requests.post(
-            f"{FASTAPI_BACKEND_URL}/api/authentication/authentication",
-            json={"username": username, "password": password},
-            verify=False
+        auth_response = _backend_post(
+            "/api/authentication/authentication",
+            json_data={"username": username, "password": password}
         )
         
-        # Get the status code from backend
         backend_status = auth_response.status_code
         
         if backend_status == 200:
-            # Backend says SUCCESS
+            # Authentication successful
             user_data = auth_response.json()
             
-            # Redirect to MAP page (not list)
+            # Redirect to map page with cookies
             response = RedirectResponse(url="/map", status_code=303)
             response.set_cookie("userid", str(user_data["userid"]), httponly=True)
             response.set_cookie("username", user_data["username"], httponly=True)
             return response
             
         else:
-            # Backend says ERROR (400, 500, etc)
+            # Authentication failed
             try:
                 error_data = auth_response.json()
                 error_msg = error_data.get("error", "Authentication failed")
             except:
-                error_msg = "Authentication failed"
+                error_msg = "Invalid username or password"
             
-            # Return login page with same status code as backend
+            # Return to authentication page with error
             return templates.TemplateResponse(
                 "authentication.html",
                 {
                     "request": request,
                     "error": f"Error {backend_status}: {error_msg}"
                 },
-                status_code=backend_status  # Match backend status
+                status_code=backend_status
             )
             
     except requests.exceptions.ConnectionError:
-        # Frontend can't reach backend
+        # Cannot connect to backend
         return templates.TemplateResponse(
             "authentication.html",
             {
@@ -292,10 +302,28 @@ async def login_submit(
 
 @app.post("/logout")
 async def logout():
-    resp = RedirectResponse(url="/list", status_code=303)
+    """Logout user - clear all authentication cookies"""
+    resp = RedirectResponse(url="/", status_code=303)
     resp.delete_cookie("userid")
+    resp.delete_cookie("username")
     return resp
 
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(
+        "app:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True
+    )
 
-
-
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(
+        "app:app",
+        host="0.0.0.0",
+        port=8000,
+        ssl_keyfile="key.pem",
+        ssl_certfile="cert.pem",
+        reload=True
+    )

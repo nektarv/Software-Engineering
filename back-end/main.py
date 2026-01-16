@@ -12,7 +12,7 @@ from endpoints.newSession import router as newSession_router
 from endpoints.sessions import router as sessions_router
 from endpoints.pointstatus import router as pointstatus_router
 from endpoints.authentication import router as auth_router
-from endpoints.authentication_v2 import router as auth_router_v2 # will probably remove
+#from endpoints.authentication_v2 import router as auth_router_v2 # will probably remove
 from endpoints.userStats import router as userStats_router
 from endpoints.chargers import router as chargers_router
 from endpoints.favorites import router as favorites_router
@@ -28,7 +28,7 @@ app.include_router(addpoints_router)
 
 # authentication
 app.include_router(auth_router)
-app.include_router(auth_router_v2) # will probably remove
+#app.include_router(auth_router_v2) # will probably remove
 
 # main endpoints
 app.include_router(points_router)
@@ -57,7 +57,7 @@ def custom_openapi():
     # force HTTPS in Swagger UI
     openapi_schema["servers"] = [
         {
-            "url": "http://localhost:9876",  #cahnge ot to https later if issue is fixed
+            "url": "https://localhost:9876",
             "description": "Local HTTPS server"
         }
     ]
