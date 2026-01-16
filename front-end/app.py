@@ -5,9 +5,6 @@ from fastapi.staticfiles import StaticFiles
 import requests
 import urllib3
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-
 app = FastAPI()
 
 templates = Jinja2Templates(directory="templates")
@@ -63,41 +60,35 @@ def _to_int_or_none(x):
     except Exception:
         return None
 
+# Experimental
 @app.get("/fetch-charger/{pointid}")
 def fetch_charger(pointid: str):
-    """Experimental endpoint - fetch single charger"""
     backend_url = f"{FASTAPI_BACKEND_URL}/api/point/{pointid}"
     response = requests.get(backend_url, verify=VERIFY_SSL)
     return response.json()
+# Experimental over
 
 @app.get("/", response_class=HTMLResponse, name="map_page")
 @app.get("/map", response_class=HTMLResponse)
 async def map_page(request: Request):
-    """Homepage with charger map - MUST WORK WITHOUT LOGIN"""
+
+    # Fetch chargers from FastAPI backend
+    response = requests.get(f"{FASTAPI_BACKEND_URL}/api/points", verify=VERIFY_SSL)
+    chargers = response.json()
+    # map_html = generate_map(chargers)  # Optional Folium integration
+
     userid = request.cookies.get("userid")
     username = request.cookies.get("username")
-    
-    chargers = []
-    backend_error = None
-    
-    try:
-        response = _backend_get("/api/points")
-        if response.status_code == 200:
-            chargers = response.json()
-        else:
-            backend_error = f"Backend returned {response.status_code}"
-    except Exception as e:
-        backend_error = f"Cannot load chargers: {str(e)}"
 
     return templates.TemplateResponse("map.html", {
         "request": request,
         "active_page": "map",
-        "chargers": chargers,
-        "backend_url": FASTAPI_BACKEND_URL,
+        # "map_html": map_html,
+         "chargers": chargers,
+        "backend_url":FASTAPI_BACKEND_URL,
         "is_logged_in": userid is not None,
         "username": username,
-        "userid": userid,
-        "backend_error": backend_error
+        "userid": userid
     })
 
 @app.get("/list", response_class=HTMLResponse, name="list_page")
@@ -112,13 +103,12 @@ async def list_page(
     price_time: str | None = None,
     favourites_only: int = 0,
 ):
-    """Charger listing page with filters"""
     min_price_f = _to_float_or_none(min_price)
     max_price_f = _to_float_or_none(max_price)
     min_power_i = _to_int_or_none(min_power)
     max_power_i = _to_int_or_none(max_power)
 
-
+    # userid comes from cookie
     userid_cookie = request.cookies.get("userid")
     username_cookie = request.cookies.get("username")
     userid_i = None
@@ -215,7 +205,6 @@ async def list_page(
 
 @app.post("/favourites/add")
 async def favourites_add(request: Request, stationid: int = Form(...)):
-    """Add charger to favourites"""
     userid_cookie = request.cookies.get("userid")
     if not userid_cookie:
         return RedirectResponse(url="/authentication", status_code=303)
@@ -234,7 +223,6 @@ async def favourites_remove(
     userid: int = Form(...),
     stationid: int = Form(...),
 ):
-    """Remove charger from favourites"""
     try:
         _backend_delete(f"/api/favourites/{userid}/{stationid}")
     except Exception:
