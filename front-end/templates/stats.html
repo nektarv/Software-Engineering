@@ -1,10 +1,10 @@
-//δεν εχει συνδεθει με endpoints ειναι μονο το layout
-
 {% extends "layout.html" %}
 {% set active_page = "statistics" %}
 
 {% block head %}
 {{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
 /* ===== CONTAINER ===== */
 .stats-container {
@@ -30,24 +30,24 @@
     padding: 8px 12px;
     border-radius: 4px;
     border: 1px solid #ddd;
+    background: white;
 }
 
 /* ===== MAIN LAYOUT: 2 COLUMNS ===== */
 .main-layout {
     display: grid;
-    grid-template-columns: 1fr 1fr; /* Δύο ίσα μέρη */
+    grid-template-columns: 1fr 1fr;
     gap: 20px;
     align-items: start;
 }
 
-/* ===== ΑΡΙΣΤΕΡΗ ΣΤΗΛΗ: Κουτιά + 2 Διαγράμματα ===== */
-.left-column {
+/* ===== CARDS & TABLES ===== */
+.left-column, .right-column {
     display: flex;
     flex-direction: column;
     gap: 20px;
 }
 
-/* Τα 3 κουτιά */
 .summary-cards {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -64,307 +64,225 @@
 }
 
 .card h3 {
-    font-size: 1 rem;
+    font-size: 0.9rem;
     color: #666;
     margin: 0 0 10px 0;
-    font-weight: bold;
+    text-transform: uppercase;
 }
 
 .card p {
-    font-size: 2 rem;
-    color: #666;
+    font-size: 1.4rem;
+    color: #2c3e50;
     margin: 0;
-    font-weight: normal;
+    font-weight: bold;
 }
 
-/* Τα 2 διαγράμματα πάνω-κάτω */
-.left-charts {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-/* ===== ΔΕΞΙΑ ΣΤΗΛΗ: Top Chargers + 3ο Διάγραμμα ===== */
-.right-column {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-/* ===== TOP CHARGERS ===== */
 .top-chargers {
     background: white;
     padding: 20px;
     border-radius: 8px;
-    max-height: 400px; /* Π.χ. 400px, μπορείς να αλλάξεις */
-    overflow-y: auto;  /* Εμφάνιση scrollbar όταν χρειάζεται */
-}
-
-.top-chargers h3 {
-    margin-top: 0;
-    margin-bottom: 20px;
-    color: #2c3e50;
-    font-size: 1.2rem;
+    max-height: 600px;
+    overflow-y: auto;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .top-chargers table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.9rem;
 }
 
 .top-chargers th, .top-chargers td {
-    padding: 12px 15px;
+    padding: 12px;
     text-align: left;
     border-bottom: 1px solid #eee;
 }
 
-.top-chargers th {
-    background-color: #f5f5f5;
-    color: #2c3e50;
-    font-weight: 600;
-    white-space: nowrap;
-}
-
-.top-chargers::-webkit-scrollbar {
-    width: 6px;
-}
-
-.top-chargers::-webkit-scrollbar-thumb {
-    background-color: rgba(0,0,0,0.2);
-    border-radius: 3px;
-}
-
-.top-chargers tr:last-child td {
-    border-bottom: none;
-}
-
-/* Στυλ για το αστεράκι */
 .favorite-star {
     background: none;
     border: none;
     font-size: 1.2rem;
     cursor: pointer;
     color: #ccc;
-    transition: color 0.2s;
-    padding: 0;
-    line-height: 1;
-}
-
-.favorite-star:hover {
-    color: #ffd700;
 }
 
 .favorite-star.active {
     color: #ffd700;
 }
 
-/* ===== ΔΙΑΓΡΑΜΜΑΤΑ ===== */
 .chart-card {
-    background: rgb(255, 255, 255);
+    background: white;
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    height: 100%;
-    min-height: 250px;
 }
 
-.chart-header {
-    margin-bottom: 15px;
+.chart-header h3 { margin: 0 0 15px 0; color: #2c3e50; }
+
+/* Περιορίζουμε το ύψος του card που περιέχει την πίτα */
+.pie-chart-container {
+    max-height: 400px; /* Συνολικό ύψος κάρτας */
 }
 
-.chart-header h3 {
-    margin: 0;
-    color: #2c3e50;
+/* Επιβάλλουμε μέγιστο ύψος στο ίδιο το γράφημα (canvas) */
+#locationChart {
+    max-height: 280px !important; 
+    margin: 0 auto; /* Κεντράρισμα */
 }
 
-.chart-placeholder {
-    width: 100%;
-    height: 300px;
-    background: #f9f9f9;
-    border: 2px dashed #ddd;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #999;
-    font-style: italic;
-}
-
-/* RESPONSIVE */
-@media (max-width: 1100px) {
-    .main-layout {
-        grid-template-columns: 1fr;
-    }
-    
-    .summary-cards {
-        grid-template-columns: repeat(3, 1fr);
-    }
-}
-
-@media (max-width: 768px) {
-    .summary-cards {
-        grid-template-columns: 1fr;
-        gap: 10px;
-    }
-}
+@media (max-width: 1100px) { .main-layout { grid-template-columns: 1fr; } }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="stats-container">
 
-    <!-- Dropdown επιλογής χρονικού διαστήματος -->
     <div class="stats-controls">
         <label for="time-range">Show me statistics for:</label>
-        <select id="time-range">
-            <option value="7">This week</option>
-            <option value="30" selected>This month</option>
-            <option value="180">The last 6 months</option>
-            <option value="365">This year</option>
+        <select id="time-range" onchange="changeRange(this.value)">
+            <option value="7" {{ 'selected' if current_range == 7 }}>This week</option>
+            <option value="30" {{ 'selected' if current_range == 30 }}>This month</option>
+            <option value="180" {{ 'selected' if current_range == 180 }}>Last 6 months</option>
+            <option value="365" {{ 'selected' if current_range == 365 }}>This year</option>
         </select>
     </div>
 
-    <!-- MAIN LAYOUT: 2 ΣΤΗΛΕΣ -->
     <div class="main-layout">
-        <!-- ΑΡΙΣΤΕΡΗ ΣΤΗΛΗ -->
         <div class="left-column">
-            <!-- Τα 3 κουτιά -->
             <div class="summary-cards">
                 <div class="card">
-                    <h3>You charged</h3>
-                    <p>12 Hours & 45 Minutes</p>
+                    <h3>Total Charging Time</h3>
+                    <p>{{ (stats.summary.total_charging_time_minutes // 60) }}h {{ (stats.summary.total_charging_time_minutes % 60) }}m</p>
                 </div>
                 <div class="card">
-                    <h3>You charged</h3>
-                    <p>28 Times</p>
+                    <h3>Total Sessions</h3>
+                    <p>{{ stats.summary.total_sessions }}</p>
                 </div>
                 <div class="card">
-                    <h3>You spent</h3>
-                    <p>285.50€</p>
+                    <h3>Total Cost</h3>
+                    <p>{{ "%.2f"|format(stats.summary.total_cost_eur) }}€</p>
                 </div>
             </div>
 
-            <!-- Τα 2 διαγράμματα πάνω-κάτω -->
             <div class="left-charts">
-                <!-- DIAGRAM 1 -->
                 <div class="chart-card">
-                    <div class="chart-header">
-                        <h3>Charging Cost Over Time</h3>
-                    </div>
-                    <div class="chart-placeholder">
-                        DIAGRAM 1
-                    </div>
+                    <div class="chart-header"><h3>Charging Cost Over Time (€)</h3></div>
+                    <canvas id="costChart"></canvas>
                 </div>
-                
-                <!-- DIAGRAM 2 -->
-                <div class="chart-card">
-                    <div class="chart-header">
-                        <h3>Energy Usage Pattern</h3>
-                    </div>
-                    <div class="chart-placeholder">
-                        DIAGRAM 2
-                    </div>
+                <div class="chart-card" style="margin-top:20px;">
+                    <div class="chart-header"><h3>Energy Usage (kWh)</h3></div>
+                    <canvas id="energyChart"></canvas>
                 </div>
             </div>
         </div>
-
-        <!-- ΔΕΞΙΑ ΣΤΗΛΗ -->
         <div class="right-column">
-            <!-- Top Chargers -->
             <div class="top-chargers">
                 <h3>Top Chargers</h3>
                 <table>
                     <thead>
                         <tr>
                             <th>Favorite</th>
-                            <th>Name</th>
-                            <th>Location</th>
-                            <th>Type</th>
+                            <th>ID</th> <th>Location</th> <th>Type</th>
                             <th>Times Used</th>
-                            <th>Money Spent</th>
+                            <th>Spent</th>
                         </tr>
                     </thead>
                     <tbody>
+                        {% for charger in stats.top_chargers %}
                         <tr>
                             <td>
-                                <button class="favorite-star active" title="Add to favorites">★</button>
+                                <button class="favorite-star {{ 'active' if charger.is_favorite else '' }}" 
+                                        onclick="toggleFav(this, {{ charger.stationid }})">
+                                    {{ '★' if charger.is_favorite else '☆' }}
+                                </button>
                             </td>
-                            <td>Station Alpha</td>
-                            <td>Athens Center</td>
-                            <td>Fast</td>
-                            <td>15</td>
-                            <td>120€</td>
+                            <td># {{ charger.stationid }}</td>
+                            
+                            <td>{{ charger.station_name }}</td>
+                            
+                            <td>{{ charger.type if charger.type else 'Standard' }}</td> 
+                            <td>{{ charger.usage_count }}</td>
+                            <td>{{ "%.2f"|format(charger.total_cost_eur) }}€</td>
                         </tr>
-                        <tr>
-                            <td>
-                                <button class="favorite-star" title="Add to favorites">☆</button>
-                            </td>
-                            <td>Station Beta</td>
-                            <td>Thessaloniki Port</td>
-                            <td>Standard</td>
-                            <td>8</td>
-                            <td>85€</td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <button class="favorite-star" title="Add to favorites">☆</button>
-                            </td>
-                            <td>Station Gamma</td>
-                            <td>Patras Plaza</td>
-                            <td>Fast</td>
-                            <td>5</td>
-                            <td>65€</td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <button class="favorite-star active" title="Add to favorites">★</button>
-                            </td>
-                            <td>Station Delta</td>
-                            <td>Heraklion Mall</td>
-                            <td>Standard</td>
-                            <td>4</td>
-                            <td>45€</td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <button class="favorite-star" title="Add to favorites">☆</button>
-                            </td>
-                            <td>Station Gamma</td>
-                            <td>Patras Plaza</td>
-                            <td>Fast</td>
-                            <td>5</td>
-                            <td>65€</td>
-                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
+                      
             </div>
 
-            <!-- DIAGRAM 3 -->
             <div class="chart-card">
-                <div class="chart-header">
-                    <h3>Charging Location Distribution</h3>
-                </div>
-                <div class="chart-placeholder">
-                    DIAGRAM 3
-                </div>
+                <div class="chart-header"><h3>Location Distribution</h3></div>
+                <canvas id="locationChart"></canvas>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-// Απλό script για τα αστεράκια
-document.querySelectorAll('.favorite-star').forEach(star => {
-    star.addEventListener('click', function() {
-        if (this.textContent === '☆') {
-            this.textContent = '★';
-            this.classList.add('active');
-        } else {
-            this.textContent = '☆';
-            this.classList.remove('active');
-        }
-    });
+// Λήψη δεδομένων από το Backend
+const statsData = {{ stats | tojson }};
+const userId = {{ userid }};
+
+// 1. CHART: COST
+new Chart(document.getElementById('costChart'), {
+    type: 'line',
+    data: {
+        labels: statsData.cost_over_time.map(d => d.period),
+        datasets: [{
+            label: 'Cost in €',
+            data: statsData.cost_over_time.map(d => d.total_cost),
+            borderColor: '#1a73e8',
+            tension: 0.1,
+            fill: true,
+            backgroundColor: 'rgba(26, 115, 232, 0.1)'
+        }]
+    }
 });
+
+// 2. CHART: ENERGY
+new Chart(document.getElementById('energyChart'), {
+    type: 'bar',
+    data: {
+        labels: statsData.energy_over_time.map(d => d.period),
+        datasets: [{
+            label: 'Energy in kWh',
+            data: statsData.energy_over_time.map(d => d.total_energy),
+            backgroundColor: '#34a853'
+        }]
+    }
+});
+
+// 3. CHART: LOCATIONS
+new Chart(document.getElementById('locationChart'), {
+    type: 'doughnut',
+    data: {
+        labels: statsData.location_breakdown.map(d => d.station_name),
+        datasets: [{
+            data: statsData.location_breakdown.map(d => d.percentage),
+            backgroundColor: ['#4285f4', '#ea4335', '#fbbc05', '#34a853', '#9b59b6']
+        }]
+    }
+});
+
+// FUNCTIONS
+function changeRange(val) {
+    window.location.href = `/stats?range=${val}`;
+}
+
+async function toggleFav(btn, stationId) {
+    const isRemove = btn.classList.contains('active');
+    const endpoint = isRemove ? '/favourites/remove' : '/favourites/add';
+    
+    const formData = new FormData();
+    formData.append('stationid', stationId);
+    formData.append('userid', userId);
+
+    try {
+        const resp = await fetch(endpoint, { method: 'POST', body: formData });
+        if (resp.ok) {
+            btn.classList.toggle('active');
+            btn.textContent = btn.classList.contains('active') ? '★' : '☆';
+        }
+    } catch (err) { console.error("Error updating favorite:", err); }
+}
 </script>
 {% endblock %}
