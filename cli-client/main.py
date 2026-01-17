@@ -7,6 +7,8 @@ import sys
 import os 
 from io import StringIO
 from datetime import datetime
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # πριν τρέξω κάποιο command $ se25XX scope --param1 value1 [--param2 value2 ...] --format fff τρέχω pip install -e .
 
@@ -36,8 +38,8 @@ def normalize_date(date_str: str) -> str:
 # -------------------------------
 def healthcheck():
 
-    url = 'http://localhost:9876/api/admin/healthcheck' # σωστό link url = 'https://localhost:9876/api/admin/healthcheck'
-    response = requests.get(url)
+    url = 'https://localhost:9876/api/admin/healthcheck' 
+    response = requests.get(url,verify=False)
     print(response.status_code)
     print(json.dumps(response.json(), ensure_ascii=False, indent=2))
 
@@ -46,8 +48,8 @@ def healthcheck():
 # -------------------------------
 def resetpoints():
 
-    url = 'http://localhost:9876/api/admin/resetpoints'
-    response = requests.post(url)
+    url = 'https://localhost:9876/api/admin/resetpoints'
+    response = requests.post(url,verify=False)
     print(response.status_code)
     print(json.dumps(response.json(), ensure_ascii=False, indent=2))
 
@@ -56,7 +58,7 @@ def resetpoints():
 # -------------------------------
 def addpoints(source):
 
-    url = 'http://localhost:9876/api/admin/addpoints'
+    url = 'https://localhost:9876/api/admin/addpoints'
 
     if not os.path.exists(source):
         print(f"To αρχείο {source} δεν βρέθηκε.")
@@ -65,7 +67,7 @@ def addpoints(source):
     with open(source, "rb") as f:
         # (όνομα αρχείου, περιεχόμενο, MIME type)
         files = {"file": (os.path.basename(source), f, "text/csv")}
-        response = requests.post(url, files=files)
+        response = requests.post(url, files=files, verify=False)
     print(response.status_code)
     print(json.dumps(response.json(), ensure_ascii=False, indent=2))
 
@@ -74,7 +76,7 @@ def addpoints(source):
 # -------------------------------
 def points(status=None, output_format="csv"):
 
-    url = 'http://localhost:9876/api/points' 
+    url = 'https://localhost:9876/api/points' 
 
     params = {}
     if status:
@@ -82,8 +84,13 @@ def points(status=None, output_format="csv"):
     if output_format:
         params["format"] = output_format.lower()  # csv ή json
 
-    response = requests.get(url, params=params)
+    response = requests.get(url, params=params, verify=False)
     print(response.status_code)
+
+    if response.status_code >= 400:
+        error_log = response.json()
+        print(json.dumps(error_log, ensure_ascii=False, indent=2))
+        return
 
     if response.status_code == 204:
         print("No data found")
@@ -103,13 +110,14 @@ def points(status=None, output_format="csv"):
         writer.writeheader()
         writer.writerows(data_sorted)
 
+
 # -------------------------------
 #   Point
 # -------------------------------
 def point(point_id: int):
  
-    url = f"http://localhost:9876/api/point/{point_id}"       
-    response = requests.get(url)
+    url = f"https://localhost:9876/api/point/{point_id}"       
+    response = requests.get(url, verify=False)
     print(response.status_code)
     data = response.json()
     print(json.dumps(data, ensure_ascii=False, indent=2))
@@ -119,11 +127,11 @@ def point(point_id: int):
 # -------------------------------
 def reserve(point_id: int, minutes: int = None):
     if minutes is None:
-        url = f"http://localhost:9876/api/reserve/{point_id}"
+        url = f"https://localhost:9876/api/reserve/{point_id}"
     else:
-        url = f"http://localhost:9876/api/reserve/{point_id}/{minutes}"
+        url = f"https://localhost:9876/api/reserve/{point_id}/{minutes}"
     
-    response = requests.post(url)
+    response = requests.post(url, verify=False)
     print(response.status_code)
     data = response.json()
     print(json.dumps(data, ensure_ascii=False, indent=2))   
@@ -141,8 +149,8 @@ def updpoint(point_id: int, status: str = None, price: float = None):
     if price:
         payload["kwhprice"] = price
     
-    url=f"http://localhost:9876/api/updpoint/{point_id}"
-    response = requests.post(url, json=payload)
+    url=f"https://localhost:9876/api/updpoint/{point_id}"
+    response = requests.post(url, json=payload, verify=False)
     data = response.json()
     print(json.dumps(data, indent=2, ensure_ascii=False))
 
@@ -161,8 +169,8 @@ def newsession(pointid: int, starttime: str, endtime: str, startsoc: int,
         "kwhprice": kwhprice,
         "amount": amount
     }
-    url= "http://localhost:9876/api/newsession"
-    response = requests.post(url, json=payload)
+    url= "https://localhost:9876/api/newsession"
+    response = requests.post(url, json=payload,verify=False)
     print(response.status_code) 
     data = response.json()
     print(json.dumps(data, indent=2, ensure_ascii=False))
@@ -174,9 +182,14 @@ def sessions(pointid, from_date, to_date, output_format="csv"):
 
     dt_from_str = normalize_date(from_date)
     dt_to_str = normalize_date(to_date)
-    url = f"http://localhost:9876/api/sessions/{pointid}/{dt_from_str}/{dt_to_str}?format={output_format}"
-    response = requests.get(url)
+    url = f"https://localhost:9876/api/sessions/{pointid}/{dt_from_str}/{dt_to_str}?format={output_format}"
+    response = requests.get(url, verify=False)
     print(response.status_code)
+
+    if response.status_code >= 400:
+        error_log = response.json()
+        print(json.dumps(error_log, ensure_ascii=False, indent=2))
+        return
 
     if response.status_code == 204:
         # Κενά δεδομένα 
@@ -203,11 +216,16 @@ def pointstatus(id, from_date, to_date, output_format="csv"):
 
     dt_from_str = normalize_date(from_date)
     dt_to_str = normalize_date(to_date)
-    url = f"http://localhost:9876/api/pointstatus/{id}/{dt_from_str}/{dt_to_str}?format={output_format}"
-    #url = f"http://localhost:9876/api/pointstatus/{id}/{from_date}/{to_date}?format={output_format}"
-    response = requests.get(url)
+    url = f"https://localhost:9876/api/pointstatus/{id}/{dt_from_str}/{dt_to_str}?format={output_format}"
+    
+    response = requests.get(url, verify=False)
     print(response.status_code)
 
+    if response.status_code >= 400:
+        error_log = response.json()
+        print(json.dumps(error_log, ensure_ascii=False, indent=2))
+        return
+    
     if response.status_code == 204:
         print( "No point status changes found.")
         return
