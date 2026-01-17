@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from fastapi import APIRouter, Request, Path
+from fastapi import APIRouter, Request, Path, Query, HTTPException
 from fastapi.responses import JSONResponse
 import mysql.connector
 
@@ -17,27 +17,41 @@ MIN_MINUTES = 30    # either 30 or 1
 async def reserve_with_specified_minutes(
     request: Request,
     point_id: int = Path(..., ge=1),
-    minutes: int = Path(..., ge=1)
+    minutes: int = Path(..., ge=1),
+    user_id: int = Query(..., description="User ID making the reservation")
 ):
-    return await reserve(request, point_id, minutes)
+    return await reserve(request, point_id, minutes, user_id)
 
 # user did not specify mins
 @router.post("/reserve/{point_id}")
 async def reserve_without_minutes(
     request: Request,
-    point_id: int = Path(..., ge=1)
+    point_id: int = Path(..., ge=1),
+    user_id: int = Query(..., description="User ID making the reservation")
 ):
-    return await reserve(request, point_id, MIN_MINUTES)
+    return await reserve(request, point_id, MIN_MINUTES, user_id)
 
 # shared logic for both cases
-async def reserve(request: Request, point_id: int, minutes: int):
+async def reserve(request: Request, point_id: int, minutes: int, user_id: int):
     try:
         conn = mysql.connector.connect(**DB_CONFIG)
         cursor = conn.cursor(dictionary=True, buffered=True)
+        
+        # Check if user exists
+        cursor.execute("SELECT userid FROM users WHERE userid = %s", (user_id,))
+        user = cursor.fetchone()
+        
+        if not user:
+            error = build_error_log(
+                request, 400, "Bad request",
+                f"User with ID {user_id} does not exist"
+            )
+            return JSONResponse(status_code=400, content=error)
+        
+        # Check if point exists
         cursor.execute("SELECT outletid, state FROM outlet WHERE outletid = %s", (point_id,))
         point = cursor.fetchone()
 
-        # check if point exists
         if not point:
             error = build_error_log(
                 request, 404, "Not found",
@@ -55,7 +69,7 @@ async def reserve(request: Request, point_id: int, minutes: int):
             return JSONResponse(status_code=400, content=error)   
 
         # check for valid minutes and correct status
-        if (minutes<MIN_MINUTES) or (status!='available'):
+        if (minutes < MIN_MINUTES) or (status != 'available'):
             return {
                 "pointid": point_id,
                 "status": status,
@@ -72,13 +86,10 @@ async def reserve(request: Request, point_id: int, minutes: int):
         reservation_end = now + timedelta(minutes=reservation_mins)
         formatted_end_time = reservation_end.strftime("%Y-%m-%d %H:%M")
         
+        # Update outlet status
         cursor.execute("UPDATE outlet SET state = 'reserved' WHERE outletid = %s", (point_id,))
 
-        # dummy user for now
-        cursor.execute("SELECT userid FROM users")
-        user = cursor.fetchone()
-        userid = user['userid']
-
+        # Create reservation with actual user ID
         cursor.execute("""
             INSERT INTO reservation 
             (date, reservationtime, reservationexpiry, has_charged, userid, pointid, sessionid) 
@@ -88,7 +99,7 @@ async def reserve(request: Request, point_id: int, minutes: int):
             now,
             reservation_end,
             0,
-            userid,
+            user_id,  # Use the actual user_id parameter
             point_id,
             None
         ))
