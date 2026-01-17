@@ -204,7 +204,7 @@ function showChargerDetails(charger) {
             // -----------------------------------------------------------
 
             // --- 2. ΕΜΦΑΝΙΣΗ ΣΤΟ HTML ---
-            contentDiv.innerHTML = `
+           contentDiv.innerHTML = `
                 <div class="charger-detail-item"><strong>ID:</strong> ${chargerData.pointid}</div>
                 <div class="charger-detail-item"><strong>Provider:</strong> ${chargerData.provider || '-'}</div>
                 
@@ -225,7 +225,15 @@ function showChargerDetails(charger) {
                     : ''}
 
                 <hr>
-                <button onclick="reserveCharger(${chargerData.pointid})" class="reserve-btn">Reserve Now</button>
+                
+                ${chargerData.status.toLowerCase() === 'available' ? 
+                    `<button onclick="reserveCharger(${chargerData.pointid})" class="reserve-btn">Reserve Now</button>` 
+                    : ''}
+
+                <button onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${chargerData.lat},${chargerData.lon}', '_blank')" 
+                        style="width: 100%; margin-top: 10px; padding: 10px; background-color: #4285F4; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
+                    📍 Navigate (Google Maps)
+                </button>
             `;
         })
         .catch(error => {
@@ -277,28 +285,39 @@ document.getElementById('confirmReserveBtn').addEventListener('click', async fun
             body: JSON.stringify({ duration: parseInt(minutes) })
         });
 
+        // ΑΜΕΣΟ REDIRECT ΑΝ ΔΕΝ ΕΙΝΑΙ LOGGED IN
+        if (response.status === 401) {
+            window.location.href = "/authentication";
+            return; // Σταματάμε την εκτέλεση εδώ
+        }
+
         const data = await response.json();
 
-        if (response.status === 401) {
-            alert("Please login first!");
-            window.location.href = "/authentication";
-        } else if (data.success || (data.status === "reserved")) {
-            alert("Reservation Successful!");
+        if (data.success || (data.status === "reserved")) {
             
+            btn.innerText = "Success!";
+            btn.style.background = "#28a745";
             
-            closeModal(); // Κλείνει το παράθυρο αμέσως
-            
-            location.reload(); // Μετά κάνει ανανέωση για να δεις τη μωβ πινέζα
+            // Προαιρετικά: Μικρή καθυστέρηση για να προλάβει ο χρήστης να δει το "Success!" 
+            // πριν γίνει το reload
+            setTimeout(() => {
+                closeModal();
+                location.reload();
+            }, 800); 
+
         } else {
-            alert("Failed: Charger is not available.");
-            closeModal();
+            
+            btn.innerText = "Unavailable";
+            btn.style.background = "#dc3545";
+            setTimeout(() => {
+                closeModal();
+            }, 1500);
         }
     } catch (err) {
-        alert("An error occurred.");
-        closeModal();
+        btn.innerText = "Error";
+        setTimeout(() => closeModal(), 1500);
     } finally {
-        btn.disabled = false;
-        btn.innerText = "Confirm";
+        
     }
 });
 
