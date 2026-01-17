@@ -101,28 +101,28 @@ async def map_page(request: Request):
 
 @app.post("/reserve/{pointid}")
 async def reserve_proxy(request: Request, pointid: int):
-    #  Έλεγχος αν ο χρήστης είναι συνδεδεμένος μέσω cookies
+    #  ελεγχος αν ο χρήστης είναι συνδεδεμένος
     userid_cookie = request.cookies.get("userid")
     if not userid_cookie:
         from fastapi.responses import JSONResponse
         return JSONResponse(status_code=401, content={"message": "Please login first"})
 
     try:
-        #  Διαβάζουμε τη διάρκεια (λεπτά) από το σώμα του αιτήματος (JSON)
+        # Διαβάζουμε τη διάρκεια από το JSON
         body = await request.json()
-        minutes = body.get("duration", 30) # Προεπιλογή τα 30 λεπτά
+        minutes = body.get("duration", 30)
 
-        #  Καλούμε το Backend API: /api/reserve/{id}/{minutes}
-        backend_url = f"/api/reserve/{pointid}/{minutes}"
+        # ΚΑΛΟΥΜΕ ΤΟ ΝΕΟ CUSTOM BACKEND API: /api/reserve-custom/{id}/{minutes}/{userid}
+        # ΠΡΟΣΟΧΗ: Χρησιμοποιούμε το νέο endpoint που φτιάξαμε στο usecase_reservation.py
+        backend_url = f"/api/reserve-custom/{pointid}/{minutes}/{userid_cookie}"
         
-        # Χρησιμοποιούμε τη helper συνάρτηση _backend_post που ήδη έχεις
+        # 4. Χρησιμοποιούμε τη helper συνάρτηση _backend_post
         response = _backend_post(backend_url) 
 
         if response.status_code == 200:
             return response.json()
         else:
             from fastapi.responses import JSONResponse
-            # Αν η κράτηση απέτυχε (π.χ. το σημείο δεν είναι available)
             return JSONResponse(status_code=response.status_code, content=response.json())
 
     except Exception as e:

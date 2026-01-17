@@ -3,7 +3,7 @@ from fastapi import APIRouter, Request
 import mysql.connector
 from utils import DB_CONFIG
 
-router = APIRouter(prefix="/api", tags=["cleanup"])
+router = APIRouter(prefix="/api", tags=["usecase_reserve"])
 
 @router.get("/cleanup-reservation")
 def cleanup_reservations():

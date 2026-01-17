@@ -10,7 +10,7 @@ router = APIRouter(prefix="/api", tags=["functional"])
 ALLOWED_STATUSES = {"available", "charging", "reserved", "malfunction", "offline"}
 
 MAX_MINUTES = 60
-MIN_MINUTES = 1    # either 30 or 1
+MIN_MINUTES = 30    # either 30 or 1
 
 # user specified mins
 @router.post("/reserve/{point_id}/{minutes}")
