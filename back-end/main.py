@@ -16,9 +16,8 @@ from endpoints.authentication import router as auth_router
 from endpoints.userStats import router as userStats_router
 from endpoints.chargers import router as chargers_router
 from endpoints.favorites import router as favorites_router
+#for reservation
 from endpoints.cleanup_reservation import router as cleanup_reservation_router 
-from endpoints.usecase_reservation import router as usecase_reservation_router
-
 
 app = FastAPI()
 
@@ -44,7 +43,6 @@ app.include_router(userStats_router)
 app.include_router(chargers_router)
 app.include_router(favorites_router)
 app.include_router(cleanup_reservation_router)
-app.include_router(usecase_reservation_router)
 
 def custom_openapi():
     if app.openapi_schema:

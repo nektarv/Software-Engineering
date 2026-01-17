@@ -1,4 +1,11 @@
-# backend/endpoints/cleanup_reservation.py
+#
+#
+#
+# this code runs every time we refresh in order to check if the reservation time expired
+#
+#
+#
+
 from fastapi import APIRouter, Request
 import mysql.connector
 from utils import DB_CONFIG

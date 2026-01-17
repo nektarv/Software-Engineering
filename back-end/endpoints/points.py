@@ -166,3 +166,103 @@ def get_point(
     except Exception as e:
         payload = build_error_log(request, 500, "Internal server error", str(e))
         return JSONResponse(status_code=500, content=payload)
+
+
+
+
+
+
+#
+#
+# when we press a charger in map we want to see its adrress too
+# the above endpoint does not return it and we have to make a similar one in order to get the address 
+#
+#
+
+@router.get("/point-details/{point_id}")
+def get_point_details(
+    request: Request,
+    point_id: int = Path(..., ge=1),
+):
+    try:
+        conn = mysql.connector.connect(**DB_CONFIG)
+        cur = conn.cursor(dictionary=True)
+
+        
+        sql_point = """
+            SELECT 
+                o.outletid AS pointid,
+                s.Longitude AS lon,
+                s.Latitude AS lat,
+                o.power AS cap,
+                o.state AS status,
+                o.markup AS markup,
+                s.provider AS provider,
+                s.address AS db_address  -- Η διεύθυνση από τον πίνακα station
+            FROM outlet o
+            JOIN station s ON s.stationid = o.stationid
+            WHERE o.outletid = %s
+            LIMIT 1
+        """
+        cur.execute(sql_point, (point_id,))
+        row = cur.fetchone()
+
+        if row is None:
+            cur.close()
+            conn.close()
+            return Response(status_code=204)
+
+        
+        reservation_end = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        if row["status"] == "reserved":
+            sql_res = """
+                SELECT reservationexpiry 
+                FROM reservation 
+                WHERE pointid = %s AND reservationexpiry >= NOW() 
+                ORDER BY reservationexpiry DESC 
+                LIMIT 1
+            """
+            cur.execute(sql_res, (point_id,))
+            res = cur.fetchone()
+            if res and res.get("reservationexpiry"):
+                reservation_end = res["reservationexpiry"].strftime("%Y-%m-%d %H:%M:%S")
+
+        
+        sql_dam = """
+            SELECT price_eur_per_kwh 
+            FROM dam_prices 
+            WHERE timeref <= NOW() 
+            ORDER BY timeref DESC 
+            LIMIT 1
+        """
+        cur.execute(sql_dam)
+        dam = cur.fetchone()
+
+        if dam is None or dam.get("price_eur_per_kwh") is None:
+            kwhprice = None
+        else:
+            kwhprice = round(float(dam["price_eur_per_kwh"]) + float(row["markup"]), 4)
+
+        cur.close()
+        conn.close()
+
+        
+        payload = {
+            "pointid": int(row["pointid"]),
+            "lon": float(row["lon"]),
+            "lat": float(row["lat"]),
+            "cap": int(row["cap"]) if row["cap"] is not None else 0,
+            "status": row["status"],
+            "reservationendtime": reservation_end,
+            "kwhprice": kwhprice,
+            "provider": row["provider"] or "unknown",
+            
+            # Εδώ μπαίνει η διεύθυνση της βάσης. 
+            # Αν είναι κενή, βγάζει μήνυμα, αλλιώς την εμφανίζει.
+            "address": row["db_address"] if row["db_address"] else "Address not available"
+        }
+        return payload
+
+    except Exception as e:
+        payload = build_error_log(request, 500, "Internal server error", str(e))
+        return JSONResponse(status_code=500, content=payload)

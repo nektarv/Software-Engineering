@@ -60,10 +60,19 @@ def _to_int_or_none(x):
     except Exception:
         return None
 
+
+
+
+#
+#
+# αυτο πλεον καλει το point-details που προστεθηκε στο αρχειο points.py 
+# για να παρει και την διευθυνση
+#
+#
 # Experimental
 @app.get("/fetch-charger/{pointid}")
 def fetch_charger(pointid: str):
-    backend_url = f"{FASTAPI_BACKEND_URL}/api/point/{pointid}"
+    backend_url = f"{FASTAPI_BACKEND_URL}/api/point-details/{pointid}" 
     response = requests.get(backend_url, verify=VERIFY_SSL)
     return response.json()
 # Experimental over
@@ -101,22 +110,25 @@ async def map_page(request: Request):
 
 @app.post("/reserve/{pointid}")
 async def reserve_proxy(request: Request, pointid: int):
-    #  ελεγχος αν ο χρήστης είναι συνδεδεμένος
+    #  Έλεγχος Login
     userid_cookie = request.cookies.get("userid")
     if not userid_cookie:
         from fastapi.responses import JSONResponse
         return JSONResponse(status_code=401, content={"message": "Please login first"})
 
     try:
-        # Διαβάζουμε τη διάρκεια από το JSON
+        #  Διαβάζουμε τη διάρκεια (minutes)
         body = await request.json()
-        minutes = body.get("duration", 30)
+        minutes = body.get("duration", 30) # Default 30 αν δεν σταλεί
 
-        # ΚΑΛΟΥΜΕ ΤΟ ΝΕΟ CUSTOM BACKEND API: /api/reserve-custom/{id}/{minutes}/{userid}
-        # ΠΡΟΣΟΧΗ: Χρησιμοποιούμε το νέο endpoint που φτιάξαμε στο usecase_reservation.py
-        backend_url = f"/api/reserve-custom/{pointid}/{minutes}/{userid_cookie}"
+        # Το endpoint είναι: POST /api/reserve/{point_id}/{minutes}
+        # ΑΛΛΑ το user_id είναι Query Parameter (?user_id=...)
         
-        # 4. Χρησιμοποιούμε τη helper συνάρτηση _backend_post
+        backend_url = f"/api/reserve/{pointid}/{minutes}?user_id={userid_cookie}"
+        
+        # Κλήση στο Backend
+        # Το _backend_post στέλνει json=None επειδή δεν χρειάζεται body, 
+        # όλα τα δεδομένα είναι στο URL.
         response = _backend_post(backend_url) 
 
         if response.status_code == 200:

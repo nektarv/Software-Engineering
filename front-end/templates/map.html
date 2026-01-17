@@ -144,8 +144,8 @@ function createMarkers(chargers) {
 // Show charger details
 // Show charger details with API call
 // Show charger details with Client-Side Reverse Geocoding (Address Lookup)
+// Show charger details
 function showChargerDetails(charger) {
-    console.log("CLICK", performance.now());
     const detailsPanel = document.getElementById('charger-details');
     const contentDiv = document.getElementById('charger-info-content');
 
@@ -158,8 +158,7 @@ function showChargerDetails(charger) {
 
     detailsPanel.style.display = 'block';
 
-    // Make API call to frontend endpoint
-    console.log("FETCH START", performance.now());
+    // Make API call to our proxy (app.py) which calls the NEW backend endpoint
     fetch(`/fetch-charger/${charger.pointid}`)
         .then(response => {
             if (!response.ok) {
@@ -167,44 +166,15 @@ function showChargerDetails(charger) {
             }
             return response.json();
         })
-        .then(async (chargerData) => {
+        .then(chargerData => {
             
-            //  ΔΙΕΥΘΥΝΣΗ (REVERSE GEOCODING)
-            let addressDisplay = "<em>Locating...</em>"; // Αρχική τιμή όσο ψάχνει
-            
-            try {
-                // Καλούμε το OpenStreetMap με τις συντεταγμένες από το Backend
-                const osmUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${chargerData.lat}&lon=${chargerData.lon}`;
-                
-                const osmResponse = await fetch(osmUrl, {
-                    headers: { 'User-Agent': 'EV-Student-Project' } // Απαραίτητο για να μην μας μπλοκάρουν
-                });
-                
-                if (osmResponse.ok) {
-                    const osmData = await osmResponse.json();
-                    
-                    // Οδός + Αριθμός
-                    const road = osmData.address.road || osmData.address.pedestrian || "";
-                    const number = osmData.address.house_number || "";
-                    const suburb = osmData.address.suburb || osmData.address.city || "";
-                    
-                    if (road) {
-                        addressDisplay = `${road} ${number}, ${suburb}`;
-                    } else {
-                        // Αν δεν βρει οδό, παίρνουμε το γενικό όνομα
-                        addressDisplay = osmData.display_name.split(',')[0];
-                    }
-                } else {
-                    addressDisplay = "Address not found";
-                }
-            } catch (err) {
-                console.error("Geocoding error:", err);
-                addressDisplay = "Address service unavailable";
-            }
-            // -----------------------------------------------------------
+            // --- ΑΛΛΑΓΗ ΕΔΩ ---
+            // Πλέον παίρνουμε τη διεύθυνση απευθείας από το JSON του Backend
+            // Αν για κάποιο λόγο είναι κενή, βάζουμε μια default τιμή
+            const addressDisplay = chargerData.address || "Address details not available";
 
-            // --- 2. ΕΜΦΑΝΙΣΗ ΣΤΟ HTML ---
-           contentDiv.innerHTML = `
+            // --- ΕΜΦΑΝΙΣΗ ΣΤΟ HTML ---
+            contentDiv.innerHTML = `
                 <div class="charger-detail-item"><strong>ID:</strong> ${chargerData.pointid}</div>
                 <div class="charger-detail-item"><strong>Provider:</strong> ${chargerData.provider || '-'}</div>
                 
@@ -230,7 +200,7 @@ function showChargerDetails(charger) {
                     `<button onclick="reserveCharger(${chargerData.pointid})" class="reserve-btn">Reserve Now</button>` 
                     : ''}
 
-                <button onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${chargerData.lat},${chargerData.lon}', '_blank')" 
+                <button onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=$${chargerData.lat},${chargerData.lon}', '_blank')" 
                         style="width: 100%; margin-top: 10px; padding: 10px; background-color: #4285F4; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
                     📍 Navigate (Google Maps)
                 </button>
@@ -240,19 +210,13 @@ function showChargerDetails(charger) {
             console.error('Error fetching charger details:', error);
             contentDiv.innerHTML = `
                 <div class="charger-detail-item">
-                    <strong>Error loading charger details</strong>
+                    <strong>Error loading details</strong>
                 </div>
-                <div class="charger-detail-item">
-                    <strong>ID:</strong> ${charger.pointid}
-                </div>
-                <div class="charger-detail-item">
-                    <strong>Status:</strong> <span class="${getStatusClass(charger.status)}">${charger.status}</span>
-                </div>
+                <div class="charger-detail-item"><strong>ID:</strong> ${charger.pointid}</div>
                 <button onclick="reserveCharger(${charger.pointid})" class="reserve-btn">Reserve</button>
             `;
         });
 }
-
 
 let selectedPointId = null;
 
@@ -288,21 +252,46 @@ document.getElementById('confirmReserveBtn').addEventListener('click', async fun
         // ΑΜΕΣΟ REDIRECT ΑΝ ΔΕΝ ΕΙΝΑΙ LOGGED IN
         if (response.status === 401) {
             window.location.href = "/authentication";
-            return; // Σταματάμε την εκτέλεση εδώ
+            return; 
         }
 
         const data = await response.json();
 
         if (data.success || (data.status === "reserved")) {
             
+            // Οπτικό feedback στο κουμπί
             btn.innerText = "Success!";
             btn.style.background = "#28a745";
             
-            // Προαιρετικά: Μικρή καθυστέρηση για να προλάβει ο χρήστης να δει το "Success!" 
-            // πριν γίνει το reload
             setTimeout(() => {
+                // --- ΑΛΛΑΓΗ: INSTANT UPDATE (ΧΩΡΙΣ RELOAD) ---
+                
+                // Βρίσκουμε τον φορτιστή στη λίστα που έχουμε ήδη στη μνήμη
+                // Χρησιμοποιούμε == για να πιάσουμε και string και number ID
+                const chargerToUpdate = currentChargers.find(c => c.pointid == selectedPointId);
+                
+                // 2. Ενημερώνουμε τα δεδομένα του τοπικά
+                if (chargerToUpdate) {
+                    chargerToUpdate.status = 'reserved';
+                    // Αν το backend επέστρεψε ώρα λήξης, την ενημερώνουμε κι αυτή
+                    if (data.reservationendtime) {
+                        chargerToUpdate.reservationendtime = data.reservationendtime;
+                    }
+                }
+
+                // Ξανατρέχουμε το φίλτρο/markers για να βαφτεί μωβ αμέσως
+                applyFilters();
+
+                // Κλείνουμε το modal
                 closeModal();
-                location.reload();
+                
+                // Κλείνουμε το panel λεπτομερειών για να αναγκάσουμε τον χρήστη 
+                // να ξαναπατήσει και να δει τα νέα δεδομένα (προαιρετικό)
+                const detailsPanel = document.getElementById('charger-details');
+                if (detailsPanel) {
+                    detailsPanel.style.display = 'none';
+                }
+
             }, 800); 
 
         } else {
@@ -314,10 +303,16 @@ document.getElementById('confirmReserveBtn').addEventListener('click', async fun
             }, 1500);
         }
     } catch (err) {
+        console.error(err);
         btn.innerText = "Error";
         setTimeout(() => closeModal(), 1500);
     } finally {
-        
+        // Επαναφορά κουμπιού (αν ξανανοίξει το modal)
+        setTimeout(() => {
+            btn.disabled = false;
+            btn.innerText = "Confirm";
+            btn.style.background = "#28a745"; 
+        }, 1600);
     }
 });
 
