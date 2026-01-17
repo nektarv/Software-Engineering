@@ -183,28 +183,41 @@ def get_point(
 def get_point_details(
     request: Request,
     point_id: int = Path(..., ge=1),
+    user_id: int | None = Query(default=None) # Δεχόμαστε το ID του χρήστη
 ):
     try:
         conn = mysql.connector.connect(**DB_CONFIG)
         cur = conn.cursor(dictionary=True)
 
-        
+        # Προσθηκη stationid και έλεγχο is_favourite
         sql_point = """
             SELECT 
                 o.outletid AS pointid,
+                s.stationid AS stationid,    -- Χρειαζόμαστε το station ID για τα favourites
                 s.Longitude AS lon,
                 s.Latitude AS lat,
                 o.power AS cap,
                 o.state AS status,
                 o.markup AS markup,
                 s.provider AS provider,
-                s.address AS db_address  -- Η διεύθυνση από τον πίνακα station
+                s.address AS db_address,
+
+                -- Ελέγχουμε αν βρέθηκε εγγραφή στο favourites για αυτόν τον user
+                CASE 
+                    WHEN f.userid IS NOT NULL THEN 1 
+                    ELSE 0 
+                END AS is_favourite
+
             FROM outlet o
             JOIN station s ON s.stationid = o.stationid
+            -- Κάνουμε LEFT JOIN με τον πίνακα favourites ΜΟΝΟ για τον συγκεκριμένο χρήστη
+            LEFT JOIN favourites f ON f.stationid = s.stationid AND f.userid = %s
             WHERE o.outletid = %s
             LIMIT 1
         """
-        cur.execute(sql_point, (point_id,))
+        
+        
+        cur.execute(sql_point, (user_id, point_id))
         row = cur.fetchone()
 
         if row is None:
@@ -212,7 +225,7 @@ def get_point_details(
             conn.close()
             return Response(status_code=204)
 
-        
+        #  Λογική Reservation (ίδια με πριν) 
         reservation_end = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         if row["status"] == "reserved":
             sql_res = """
@@ -227,7 +240,7 @@ def get_point_details(
             if res and res.get("reservationexpiry"):
                 reservation_end = res["reservationexpiry"].strftime("%Y-%m-%d %H:%M:%S")
 
-        
+        # Λογική Price 
         sql_dam = """
             SELECT price_eur_per_kwh 
             FROM dam_prices 
@@ -246,9 +259,10 @@ def get_point_details(
         cur.close()
         conn.close()
 
-        
+        # --- Payload ---
         payload = {
             "pointid": int(row["pointid"]),
+            "stationid": int(row["stationid"]), # Το χρειαζόμαστε για το toggleStar
             "lon": float(row["lon"]),
             "lat": float(row["lat"]),
             "cap": int(row["cap"]) if row["cap"] is not None else 0,
@@ -256,10 +270,8 @@ def get_point_details(
             "reservationendtime": reservation_end,
             "kwhprice": kwhprice,
             "provider": row["provider"] or "unknown",
-            
-            # Εδώ μπαίνει η διεύθυνση της βάσης. 
-            # Αν είναι κενή, βγάζει μήνυμα, αλλιώς την εμφανίζει.
-            "address": row["db_address"] if row["db_address"] else "Address not available"
+            "address": row["db_address"] if row["db_address"] else "Address not available",
+            "is_favourite": row["is_favourite"] # <---  1 ή 0
         }
         return payload
 

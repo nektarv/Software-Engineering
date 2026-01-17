@@ -71,9 +71,19 @@ def _to_int_or_none(x):
 #
 # Experimental
 @app.get("/fetch-charger/{pointid}")
-def fetch_charger(pointid: str):
-    backend_url = f"{FASTAPI_BACKEND_URL}/api/point-details/{pointid}" 
-    response = requests.get(backend_url, verify=VERIFY_SSL)
+def fetch_charger(request: Request, pointid: str):
+    # Παίρνουμε το userid από το cookie
+    userid_cookie = request.cookies.get("userid")
+    
+    # Το στέλνουμε στο backend ως παράμετρο
+    params = {}
+    if userid_cookie:
+        params["user_id"] = userid_cookie
+
+    # Καλούμε το point-details
+    backend_url = f"{FASTAPI_BACKEND_URL}/api/point-details/{pointid}"
+    
+    response = requests.get(backend_url, params=params, verify=VERIFY_SSL)
     return response.json()
 # Experimental over
 
@@ -256,30 +266,83 @@ async def list_page(
 
 @app.post("/favourites/add")
 async def favourites_add(request: Request, stationid: int = Form(...)):
+    # Παίρνουμε το ID από το cookie
     userid_cookie = request.cookies.get("userid")
     if not userid_cookie:
         return RedirectResponse(url="/authentication", status_code=303)
     
     try:
         userid_i = int(userid_cookie)
+        # Στέλνουμε το αίτημα στο backend
         _backend_post(f"/api/favourites/{userid_i}/{stationid}")
     except Exception:
-        pass
+        pass # Αγνοούμε τα errors για να μην κρασάρει η σελίδα
     
+    # Επιστρέφουμε πίσω στη λίστα (Reload)
     return _redirect_back(request, fallback="/list")
 
 @app.post("/favourites/remove")
 async def favourites_remove(
     request: Request,
-    userid: int = Form(...),
-    stationid: int = Form(...),
+    stationid: int = Form(...), 
 ):
+    # Παίρνουμε το ID από το cookie (πιο ασφαλές)
+    userid_cookie = request.cookies.get("userid")
+    if not userid_cookie:
+         return _redirect_back(request, fallback="/list")
+
     try:
-        _backend_delete(f"/api/favourites/{userid}/{stationid}")
+        userid_i = int(userid_cookie)
+        # Στέλνουμε DELETE αίτημα στο backend
+        _backend_delete(f"/api/favourites/{userid_i}/{stationid}")
     except Exception:
         pass
     
     return _redirect_back(request, fallback="/list")
+
+
+
+# FAVOURITES (JSON BASED - ΓΙΑ ΤΟΝ ΧΑΡΤΗ)
+
+@app.post("/favourites/add_json")
+async def favourites_add_json(request: Request, stationid: int = Form(...)):
+    userid_cookie = request.cookies.get("userid")
+    if not userid_cookie:
+        return JSONResponse(status_code=401, content={"message": "Login required"})
+    
+    try:
+        userid_i = int(userid_cookie)
+        # Καλούμε το backend
+        resp = _backend_post(f"/api/favourites/{userid_i}/{stationid}")
+        
+        if resp.status_code in (200, 201):
+            return {"success": True}
+        else:
+            return JSONResponse(status_code=resp.status_code, content={"message": "Error adding favorite"})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"message": str(e)})
+
+@app.post("/favourites/remove_json")
+async def favourites_remove_json(request: Request, stationid: int = Form(...)):
+    userid_cookie = request.cookies.get("userid")
+    if not userid_cookie:
+        return JSONResponse(status_code=401, content={"message": "Login required"})
+    
+    try:
+        userid_i = int(userid_cookie)
+        # Καλούμε το backend (DELETE)
+        resp = _backend_delete(f"/api/favourites/{userid_i}/{stationid}")
+        
+        if resp.status_code in (200, 204):
+            return {"success": True}
+        else:
+            return JSONResponse(status_code=resp.status_code, content={"message": "Error removing favorite"})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"message": str(e)})
+
+
+
+
 
 @app.get("/stats", response_class=HTMLResponse, name="stats_page")
 async def stats_page(request: Request, range: int = 30):

@@ -64,6 +64,13 @@
 
 
 <script>
+
+// --- JINJA VARIABLES ---
+const isUserLoggedIn = {{ is_logged_in | tojson }};
+const currentUserId = {{ userid | tojson }};
+// -----------------------
+
+
 // Initialize the map
 function fitMapToMarkers() {
     if (chargerMarkers.length === 0) return;  // Nothing to fit
@@ -158,28 +165,47 @@ function showChargerDetails(charger) {
 
     detailsPanel.style.display = 'block';
 
-    // Make API call to our proxy (app.py) which calls the NEW backend endpoint
+    // Fetch details including favorite status
     fetch(`/fetch-charger/${charger.pointid}`)
         .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             return response.json();
         })
         .then(chargerData => {
             
-            // --- ΑΛΛΑΓΗ ΕΔΩ ---
-            // Πλέον παίρνουμε τη διεύθυνση απευθείας από το JSON του Backend
-            // Αν για κάποιο λόγο είναι κενή, βάζουμε μια default τιμή
             const addressDisplay = chargerData.address || "Address details not available";
+
+            // --- ΛΟΓΙΚΗ ΓΙΑ ΤΟ ΑΣΤΕΡΑΚΙ ---
+            let starHtml = '';
+            if (isUserLoggedIn) {
+                // Αν είναι 1 είναι αγαπημένο (★), αλλιώς άδειο (☆)
+                const isFav = chargerData.is_favourite === 1;
+                const starIcon = isFav ? '★' : '☆';
+                
+                // Φτιάχνουμε το κουμπί
+                starHtml = `
+                    <button id="star-btn-${chargerData.pointid}" 
+                            class="star-btn" 
+                            style="font-size: 1.8rem; cursor: pointer; border:none; background:none; color: #ffc107; line-height: 1; padding: 0 10px;"
+                            onclick="toggleStar(${chargerData.stationid}, ${chargerData.pointid}, ${isFav})"
+                            title="${isFav ? 'Remove from favorites' : 'Add to favorites'}">
+                        ${starIcon}
+                    </button>
+                `;
+            } else {
+                // Αν δεν είναι logged in, απλά δείχνουμε ένα αχνό αστεράκι ή τίποτα
+                starHtml = `<a href="/authentication" style="text-decoration:none; font-size:1.5rem; color:#ccc;" title="Login to favorite">☆</a>`;
+            }
 
             // --- ΕΜΦΑΝΙΣΗ ΣΤΟ HTML ---
             contentDiv.innerHTML = `
-                <div class="charger-detail-item"><strong>ID:</strong> ${chargerData.pointid}</div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <div class="charger-detail-item" style="margin:0;"><strong>ID:</strong> ${chargerData.pointid}</div>
+                    ${starHtml}
+                </div>
+
                 <div class="charger-detail-item"><strong>Provider:</strong> ${chargerData.provider || '-'}</div>
-                
                 <div class="charger-detail-item"><strong>Address:</strong> ${addressDisplay}</div>
-                
                 <div class="charger-detail-item"><strong>Power:</strong> ${chargerData.cap || chargerData.power || '-'} kW</div>
                 <div class="charger-detail-item"><strong>Price:</strong> €${chargerData.kwhprice}/kWh</div>
                 
@@ -209,14 +235,58 @@ function showChargerDetails(charger) {
         .catch(error => {
             console.error('Error fetching charger details:', error);
             contentDiv.innerHTML = `
-                <div class="charger-detail-item">
-                    <strong>Error loading details</strong>
-                </div>
+                <div class="charger-detail-item"><strong>Error loading details</strong></div>
                 <div class="charger-detail-item"><strong>ID:</strong> ${charger.pointid}</div>
                 <button onclick="reserveCharger(${charger.pointid})" class="reserve-btn">Reserve</button>
             `;
         });
 }
+
+
+
+
+// Συνάρτηση για προσθήκη/αφαίρεση αγαπημένων (AJAX)
+async function toggleStar(stationId, pointId, isCurrentlyFav) {
+    const btn = document.getElementById(`star-btn-${pointId}`);
+    if (!btn) return;
+    
+    btn.disabled = true; // Κλείδωμα για αποφυγή διπλού κλικ
+
+    // Επιλογή endpoint ανάλογα με την κατάσταση
+    const endpoint = isCurrentlyFav ? '/favourites/remove_json' : '/favourites/add_json';
+    
+    const formData = new FormData();
+    formData.append('stationid', stationId);
+    if (currentUserId) formData.append('userid', currentUserId);
+
+    try {
+        const res = await fetch(endpoint, {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await res.json();
+        
+        if (result.success || res.ok) {
+            // Αν όλα πήγαν καλά, αντιστρέφουμε την κατάσταση τοπικά
+            const newIsFav = !isCurrentlyFav;
+            btn.innerHTML = newIsFav ? '★' : '☆';
+            btn.title = newIsFav ? 'Remove from favorites' : 'Add to favorites';
+            // Ενημερώνουμε το onclick για την επόμενη φορά
+            btn.onclick = () => toggleStar(stationId, pointId, newIsFav);
+        } else {
+            alert('Could not update favorites. Please try again.');
+        }
+    } catch (err) {
+        console.error("Star Error:", err);
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+
+
+
 
 let selectedPointId = null;
 
