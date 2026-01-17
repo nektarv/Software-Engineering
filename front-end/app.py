@@ -273,6 +273,7 @@ async def favourites_remove(
 async def stats_page(request: Request, range: int = 30):
     # 1. Παίρνουμε το userid από το cookie (όπως κάνεις και στο /list)
     userid_cookie = request.cookies.get("userid")
+    username_cookie = request.cookies.get("username") 
     
     # Αν δεν είναι συνδεδεμένος, στείλτον στο login
     if not userid_cookie:
@@ -310,7 +311,9 @@ async def stats_page(request: Request, range: int = 30):
             "active_page": "stats",
             "stats": stats_data,        # Τα δεδομένα από τη βάση
             "current_range": range,     # Για να ξέρει το dropdown τι να δείξει
-            "userid": userid_i          # Για τα JavaScript calls (favorites)
+            "userid": userid_i,          # Για τα JavaScript calls (favorites)
+            "is_logged_in": True, 
+            "username": username_cookie,
         },
     )
 

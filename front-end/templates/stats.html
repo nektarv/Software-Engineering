@@ -198,8 +198,7 @@
                             <td># {{ charger.stationid }}</td>
                             
                             <td>{{ charger.station_name }}</td>
-                            
-                            <td>{{ charger.type if charger.type else 'Standard' }}</td> 
+                            <td>{{ charger.connector_type if charger.connector_type else 'Unknown' }}</td>
                             <td>{{ charger.usage_count }}</td>
                             <td>{{ "%.2f"|format(charger.total_cost_eur) }}€</td>
                         </tr>

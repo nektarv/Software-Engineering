@@ -80,6 +80,7 @@ async def get_user_statistics(
                 st.name as station_name,
                 st.Latitude,
                 st.Longitude,
+                o.connector as connector_type,
                 COUNT(*) as usage_count,
                 SUM(s.totalkwh) as total_energy_kwh,
                 SUM(s.amount) as total_cost_eur,
@@ -97,7 +98,7 @@ async def get_user_statistics(
             WHERE r.userid = %s
                 AND s.starttime >= %s
                 AND s.endtime <= %s
-            GROUP BY st.stationid, st.name, st.Latitude, st.Longitude
+            GROUP BY st.stationid, st.name, st.Latitude, st.Longitude, o.connector
             ORDER BY usage_count DESC
             LIMIT 5
         """, (userid, userid, from_date, to_date))
