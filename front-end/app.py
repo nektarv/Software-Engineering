@@ -134,7 +134,7 @@ async def reserve_proxy(request: Request, pointid: int):
         # Το endpoint είναι: POST /api/reserve/{point_id}/{minutes}
         # ΑΛΛΑ το user_id είναι Query Parameter (?user_id=...)
         
-        backend_url = f"/api/reserve/{pointid}/{minutes}?user_id={userid_cookie}"
+        backend_url = f"/api/reserve-custom/{pointid}/{minutes}/{userid_cookie}"
         
         # Κλήση στο Backend
         # Το _backend_post στέλνει json=None επειδή δεν χρειάζεται body, 
