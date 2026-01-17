@@ -24,27 +24,15 @@
     <!-- Map Controls (floating over map) -->
     <div class="map-controls">
         <h4>Filter by Status:</h4>
-        <div class="filter-option">
-            <input type="checkbox" id="filter-available" checked>
-            <label for="filter-available">Available</label>
-        </div>
-        <div class="filter-option">
-            <input type="checkbox" id="filter-charging" unchecked>
-            <label for="filter-charging">Charging</label>
-        </div>
-        <div class="filter-option">
-            <input type="checkbox" id="filter-reserved" unchecked>
-            <label for="filter-reserved">Reserved</label>
-        </div>
-        <div class="filter-option">
-            <input type="checkbox" id="filter-malfunction" unchecked>
-            <label for="filter-malfunction">Malfunction</label>
-        </div>
-        <div class="filter-option">
-            <input type="checkbox" id="filter-offline" unchecked>
-            <label for="filter-offline">Offline</label>
-        </div>
-        <button id="apply-filters" class="reserve-btn">Apply Filters</button>
+        
+        <select id="status-filter" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+            <option value="all">Show All</option>
+            <option value="available" selected>Available</option>
+            <option value="charging">Charging</option>
+            <option value="reserved">Reserved</option>
+            <option value="malfunction">Malfunction</option>
+            <option value="offline">Offline</option>
+        </select>
     </div>
 
     <!-- Map Container -->
@@ -57,6 +45,23 @@
     </div>
 </div>
 
+<div id="reservationModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:10000; align-items:center; justify-content:center;">
+    <div style="background:white; padding:25px; border-radius:12px; width:300px; text-align:center; color: black;">
+        <h3 style="margin-top:0;">Reserve Charger</h3>
+        <p>Select duration (minutes):</p>
+        <select id="durationSelect" style="width:100%; padding:10px; margin:15px 0; border-radius:6px; border: 1px solid #ccc;">
+            <option value="1" selected>1 Minutes</option>
+            <option value="2">2 Minutes</option>
+            <option value="3">3 Minutes (Max)</option>
+        </select>
+        <div style="display:flex; gap:10px;">
+            <button type="button" onclick="closeModal()" style="flex:1; padding:10px; background:#ccc; border:none; border-radius:6px; cursor:pointer;">Cancel</button>
+            <button type="button" id="confirmReserveBtn" style="flex:1; padding:10px; background:#28a745; color:white; border:none; border-radius:6px; cursor:pointer;">Confirm</button>
+        </div>
+    </div>
+</div>
+
+
 
 <script>
 // Initialize the map
@@ -67,7 +72,7 @@ function fitMapToMarkers() {
     map.fitBounds(group.getBounds().pad(0.2));  // Add padding so markers aren’t at the edge
 }
 
-const map = L.map('map').setView([40.7128, -74.0060], 13);
+const map = L.map('map').setView([37.9838, 23.7275], 11);
 
 // Add OpenStreetMap tiles
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -138,6 +143,7 @@ function createMarkers(chargers) {
 
 // Show charger details
 // Show charger details with API call
+// Show charger details with Client-Side Reverse Geocoding (Address Lookup)
 function showChargerDetails(charger) {
     console.log("CLICK", performance.now());
     const detailsPanel = document.getElementById('charger-details');
@@ -152,7 +158,7 @@ function showChargerDetails(charger) {
 
     detailsPanel.style.display = 'block';
 
-    // Make API call to frontend endpoint (browser -> frontend -> backend)
+    // Make API call to frontend endpoint
     console.log("FETCH START", performance.now());
     fetch(`/fetch-charger/${charger.pointid}`)
         .then(response => {
@@ -161,12 +167,49 @@ function showChargerDetails(charger) {
             }
             return response.json();
         })
-        .then(chargerData => {
+        .then(async (chargerData) => {
             
-            // --- ΑΛΛΑΓΗ: Μορφοποίηση δεδομένων (αντί για raw JSON) ---
+            //  ΔΙΕΥΘΥΝΣΗ (REVERSE GEOCODING)
+            let addressDisplay = "<em>Locating...</em>"; // Αρχική τιμή όσο ψάχνει
+            
+            try {
+                // Καλούμε το OpenStreetMap με τις συντεταγμένες από το Backend
+                const osmUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${chargerData.lat}&lon=${chargerData.lon}`;
+                
+                const osmResponse = await fetch(osmUrl, {
+                    headers: { 'User-Agent': 'EV-Student-Project' } // Απαραίτητο για να μην μας μπλοκάρουν
+                });
+                
+                if (osmResponse.ok) {
+                    const osmData = await osmResponse.json();
+                    
+                    // Οδός + Αριθμός
+                    const road = osmData.address.road || osmData.address.pedestrian || "";
+                    const number = osmData.address.house_number || "";
+                    const suburb = osmData.address.suburb || osmData.address.city || "";
+                    
+                    if (road) {
+                        addressDisplay = `${road} ${number}, ${suburb}`;
+                    } else {
+                        // Αν δεν βρει οδό, παίρνουμε το γενικό όνομα
+                        addressDisplay = osmData.display_name.split(',')[0];
+                    }
+                } else {
+                    addressDisplay = "Address not found";
+                }
+            } catch (err) {
+                console.error("Geocoding error:", err);
+                addressDisplay = "Address service unavailable";
+            }
+            // -----------------------------------------------------------
+
+            // --- 2. ΕΜΦΑΝΙΣΗ ΣΤΟ HTML ---
             contentDiv.innerHTML = `
                 <div class="charger-detail-item"><strong>ID:</strong> ${chargerData.pointid}</div>
                 <div class="charger-detail-item"><strong>Provider:</strong> ${chargerData.provider || '-'}</div>
+                
+                <div class="charger-detail-item"><strong>Address:</strong> ${addressDisplay}</div>
+                
                 <div class="charger-detail-item"><strong>Power:</strong> ${chargerData.cap || chargerData.power || '-'} kW</div>
                 <div class="charger-detail-item"><strong>Price:</strong> €${chargerData.kwhprice}/kWh</div>
                 
@@ -183,13 +226,7 @@ function showChargerDetails(charger) {
 
                 <hr>
                 <button onclick="reserveCharger(${chargerData.pointid})" class="reserve-btn">Reserve Now</button>
-                
-                <details style="margin-top:15px; cursor:pointer;">
-                    <summary style="font-size:0.8em; color:#777;">Raw Debug Data</summary>
-                    <pre style="font-size:0.7em; background:#eee; padding:5px;">${JSON.stringify(chargerData, null, 2)}</pre>
-                </details>
             `;
-            // --------------------------------------------------------
         })
         .catch(error => {
             console.error('Error fetching charger details:', error);
@@ -209,33 +246,92 @@ function showChargerDetails(charger) {
 }
 
 
-// Placeholder reserve function
+let selectedPointId = null;
+
+// Συνάρτηση που ανοίγει το Modal (την καλεί το κουμπί Reserve Now)
 function reserveCharger(pointid) {
-    alert(`Charger ${pointid} reserved!`);
+    selectedPointId = pointid;
+    const modal = document.getElementById('reservationModal');
+    modal.style.display = 'flex'; // Χρησιμοποιούμε flex για να κεντραριστεί
 }
 
+// Συνάρτηση που κλείνει το Modal (την καλεί το κουμπί Cancel)
+function closeModal() {
+    const modal = document.getElementById('reservationModal');
+    modal.style.display = 'none';
+    selectedPointId = null;
+}
+
+document.getElementById('confirmReserveBtn').addEventListener('click', async function() {
+    if (!selectedPointId) return;
+    const minutes = document.getElementById('durationSelect').value;
+    const btn = this;
+    
+    btn.disabled = true;
+    btn.innerText = "Processing...";
+
+    try {
+        const response = await fetch(`/reserve/${selectedPointId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ duration: parseInt(minutes) })
+        });
+
+        const data = await response.json();
+
+        if (response.status === 401) {
+            alert("Please login first!");
+            window.location.href = "/authentication";
+        } else if (data.success || (data.status === "reserved")) {
+            alert("Reservation Successful!");
+            
+            
+            closeModal(); // Κλείνει το παράθυρο αμέσως
+            
+            location.reload(); // Μετά κάνει ανανέωση για να δεις τη μωβ πινέζα
+        } else {
+            alert("Failed: Charger is not available.");
+            closeModal();
+        }
+    } catch (err) {
+        alert("An error occurred.");
+        closeModal();
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "Confirm";
+    }
+});
+
 // Apply filters
+// --- ΝΕΟΣ ΚΩΔΙΚΑΣ ΜΟΝΟ ΓΙΑ ΤΑ ΦΙΛΤΡΑ ---
+
+// Συνάρτηση φίλτρου για Dropdown
 function applyFilters() {
-    const showAvailable = document.getElementById('filter-available').checked;
-    const showCharging = document.getElementById('filter-charging').checked;
-    const showReserved = document.getElementById('filter-reserved').checked;
-    const showMalfunction = document.getElementById('filter-malfunction').checked;
-    const showOffline = document.getElementById('filter-offline').checked;
+    const dropdown = document.getElementById('status-filter');
+    
+    // Αν δεν βρεθεί το dropdown, σταματάμε (για αποφυγή errors)
+    if (!dropdown) return;
+
+    const selectedStatus = dropdown.value; // 'all', 'available', 'charging' κλπ.
 
     const filtered = currentChargers.filter(charger => {
-        const status = charger.status.toLowerCase();
-        return (status === 'available' && showAvailable) ||
-               (status === 'charging' && showCharging) ||
-               (status === 'reserved' && showReserved) ||
-               (status === 'malfunction' && showMalfunction) ||
-               (status === 'offline' && showOffline);
+        // Αν είναι 'all', τα δείχνουμε όλα
+        if (selectedStatus === 'all') {
+            return true;
+        }
+        // Αλλιώς συγκρίνουμε το status
+        return charger.status.toLowerCase() === selectedStatus;
     });
 
     createMarkers(filtered);
 }
 
-// Filter button event
-document.getElementById('apply-filters').addEventListener('click', applyFilters);
+// Event Listener: Όταν αλλάζει το dropdown, τρέχει το φίλτρο
+const dropdownElement = document.getElementById('status-filter');
+if (dropdownElement) {
+    dropdownElement.addEventListener('change', applyFilters);
+}
+
 
 // -------------------------------------------------
 // Initialization 

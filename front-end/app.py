@@ -72,24 +72,63 @@ def fetch_charger(pointid: str):
 @app.get("/map", response_class=HTMLResponse)
 async def map_page(request: Request):
 
-    # Fetch chargers from FastAPI backend
+    #TRIGGER CLEANUP: Λέμε στο backend να ελευθερώσει όσους έληξαν
+    try:
+        
+        _backend_get("/api/cleanup-reservation")
+    except Exception as e:
+        print(f"Cleanup failed: {e}")
+
+    #FETCH POINTS
     response = requests.get(f"{FASTAPI_BACKEND_URL}/api/points", verify=VERIFY_SSL)
     chargers = response.json()
-    # map_html = generate_map(chargers)  # Optional Folium integration
 
+    # COOKIES
     userid = request.cookies.get("userid")
     username = request.cookies.get("username")
 
+    # RENDER
     return templates.TemplateResponse("map.html", {
         "request": request,
         "active_page": "map",
-        # "map_html": map_html,
-         "chargers": chargers,
-        "backend_url":FASTAPI_BACKEND_URL,
+        "chargers": chargers,
+        "backend_url": FASTAPI_BACKEND_URL,
         "is_logged_in": userid is not None,
         "username": username,
         "userid": userid
     })
+
+
+@app.post("/reserve/{pointid}")
+async def reserve_proxy(request: Request, pointid: int):
+    #  Έλεγχος αν ο χρήστης είναι συνδεδεμένος μέσω cookies
+    userid_cookie = request.cookies.get("userid")
+    if not userid_cookie:
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=401, content={"message": "Please login first"})
+
+    try:
+        #  Διαβάζουμε τη διάρκεια (λεπτά) από το σώμα του αιτήματος (JSON)
+        body = await request.json()
+        minutes = body.get("duration", 30) # Προεπιλογή τα 30 λεπτά
+
+        #  Καλούμε το Backend API: /api/reserve/{id}/{minutes}
+        backend_url = f"/api/reserve/{pointid}/{minutes}"
+        
+        # Χρησιμοποιούμε τη helper συνάρτηση _backend_post που ήδη έχεις
+        response = _backend_post(backend_url) 
+
+        if response.status_code == 200:
+            return response.json()
+        else:
+            from fastapi.responses import JSONResponse
+            # Αν η κράτηση απέτυχε (π.χ. το σημείο δεν είναι available)
+            return JSONResponse(status_code=response.status_code, content=response.json())
+
+    except Exception as e:
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=500, content={"message": str(e)})
+
 
 @app.get("/list", response_class=HTMLResponse, name="list_page")
 async def list_page(

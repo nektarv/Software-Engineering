@@ -62,8 +62,8 @@ DROP TABLE IF EXISTS `charging_database`.`station` ;
 CREATE TABLE IF NOT EXISTS `charging_database`.`station` (
   `stationid` INT NOT NULL AUTO_INCREMENT,
   `address` VARCHAR(100) NULL,
-  `Latitude` DECIMAL(6,4) NOT NULL,
-  `Longitude` DECIMAL(7,4) NOT NULL,
+  `Latitude` DECIMAL(10,8) NOT NULL,
+  `Longitude` DECIMAL(11,8) NOT NULL,
   `name` VARCHAR(255) NULL,
   `provider` VARCHAR(45) NULL,
   PRIMARY KEY (`stationid`),
