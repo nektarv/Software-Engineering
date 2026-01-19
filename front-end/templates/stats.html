@@ -130,6 +130,95 @@
 }
 
 @media (max-width: 1100px) { .main-layout { grid-template-columns: 1fr; } }
+
+@media (max-width: 768px) {
+
+.stats-container {
+    padding: 12px;
+    max-width: 100%;
+}
+
+/* ===== CONTROLS ===== */
+.stats-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    width: 100%;
+    overflow: hidden;
+}
+
+.stats-controls label {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.stats-controls select {
+    font-size: 1.1rem;
+    padding: 14px 12px;
+    width: 100%;
+    max-width: 100%;
+    min-height: 48px;
+    box-sizing: border-box;
+    display: block;
+    border-radius: 8px;
+}
+
+/* ===== LAYOUT ===== */
+.main-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.left-column,
+.right-column {
+    display: contents;
+}
+
+/* ===== SUMMARY CARDS ===== */
+.summary-cards {
+    grid-template-columns: 1fr;
+    width: 100%;
+}
+
+.card {
+    width: 100%;
+}
+
+/* ===== TABLE ===== */
+.top-chargers {
+    order: 2;
+    width: 100%;
+    overflow-x: auto;
+}
+
+.top-chargers table {
+    min-width: 600px;
+}
+
+/* ===== CHARTS ===== */
+.left-charts {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    order: 3;
+    width: 100%;
+}
+
+.right-column > .chart-card {
+    order: 4;
+    width: 100%;
+}
+
+canvas {
+    width: 100% !important;
+    height: auto !important;
+    max-height: 320px;
+}
+}
+
 </style>
 {% endblock %}
 
