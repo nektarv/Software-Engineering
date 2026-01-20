@@ -1,6 +1,7 @@
 import mysql.connector
 import csv
 from pathlib import Path
+from datetime import datetime
 
 DB_CONFIG = {
     'host': 'localhost',
@@ -23,15 +24,15 @@ def update_db():
         conn = mysql.connector.connect(**DB_CONFIG)
         cursor = conn.cursor()
 
+        # --- PART 1: Insert/Update New Prices ---
         with open(csv_path, 'r', encoding='utf-8') as f:
             reader = csv.reader(f)
-            next(reader) # Skip header row ("datetime_athens", "eur_per_kwh")
+            next(reader) # Skip header row
             
             inserted = 0
             updated = 0
 
             for row in reader:
-                # CSV format: YYYY-MM-DD HH:MM
                 time_str = row[0]
                 price_val = float(row[1])
 
@@ -39,7 +40,7 @@ def update_db():
                 if len(time_str) == 16:
                     time_str += ":00"
 
-                # 1. Check if record exists for this time
+                # 1. Check if record exists
                 check_sql = "SELECT price_id FROM dam_prices WHERE timeref = %s LIMIT 1"
                 cursor.execute(check_sql, (time_str,))
                 existing_record = cursor.fetchone()
@@ -54,9 +55,23 @@ def update_db():
                     insert_sql = "INSERT INTO dam_prices (timeref, price_eur_per_kwh, market) VALUES (%s, %s, 'DAM')"
                     cursor.execute(insert_sql, (time_str, price_val))
                     inserted += 1
+        
+        print(f"Import Finished! Inserted: {inserted}, Updated: {updated}")
+
+        # --- PART 2: Cleanup Old Data ---
+        print("Cleaning up old data...")
+        
+        # Command: Delete everything BEFORE "Yesterday midnight"
+        # CURDATE() = Today 00:00
+        # INTERVAL 1 DAY = One day back (Yesterday 00:00)
+        # Therefore it keeps: Yesterday, Today, Tomorrow.
+        cleanup_sql = "DELETE FROM dam_prices WHERE timeref < DATE_SUB(CURDATE(), INTERVAL 1 DAY)"
+        
+        cursor.execute(cleanup_sql)
+        deleted_count = cursor.rowcount
+        print(f"Cleanup Done! Deleted {deleted_count} old records.")
 
         conn.commit()
-        print(f"Done! Inserted: {inserted}, Updated: {updated}")
 
     except mysql.connector.Error as err:
         print(f"Database Error: {err}")

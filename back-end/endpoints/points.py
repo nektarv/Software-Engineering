@@ -143,7 +143,7 @@ def get_point(
             # If DAM table empty, return null price
             kwhprice = None
         else:
-            kwhprice = round(float(dam["price_eur_per_kwh"]) + float(row["markup"]), 4)
+            kwhprice = round(float(dam["price_eur_per_kwh"]) * float(row["markup"]), 4)
 
         cur.close()
         conn.close()
@@ -254,7 +254,7 @@ def get_point_details(
         if dam is None or dam.get("price_eur_per_kwh") is None:
             kwhprice = None
         else:
-            kwhprice = round(float(dam["price_eur_per_kwh"]) + float(row["markup"]), 4)
+            kwhprice = round(float(dam["price_eur_per_kwh"]) * float(row["markup"]), 4)
 
         cur.close()
         conn.close()
