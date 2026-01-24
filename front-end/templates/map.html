@@ -182,84 +182,118 @@ function showChargerDetails(charger) {
     const contentDiv = document.getElementById('charger-info-content');
     if (!sidebar || !contentDiv) return;
 
-    // Show sidebar
     sidebar.classList.remove('hidden');
+
+    // Require stationid on the marker object
+    if (!charger.stationid) {
+        contentDiv.innerHTML = `
+            <div class="charger-detail-item"><strong>Error:</strong> stationid missing from marker data.</div>
+            <div class="charger-detail-item">Update /api/stations to include stationid.</div>
+        `;
+        return;
+    }
 
     // Loading state
     contentDiv.innerHTML = `
         <div class="charger-detail-item">
-            <strong>Loading charger details...</strong>
+            <strong>Loading station details...</strong>
         </div>
     `;
 
-    fetch(`/fetch-charger/${charger.pointid}`)
+    fetch(`/fetch-station/${charger.stationid}`)
         .then(response => {
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             return response.json();
         })
-        .then(chargerData => {
-            const addressDisplay = chargerData.address || "Address details not available";
+        .then(stationData => {
+            const addressDisplay = stationData.address || "Address details not available";
 
-            // Favorite star
-            const isFav = chargerData.is_favourite === 1;
+            // Station-level favourite star
+            const isFav = stationData.is_favourite === 1;
             const starHtml = isUserLoggedIn
                 ? `
-                    <button id="star-btn-${chargerData.pointid}"
+                    <button id="star-btn-station-${stationData.stationid}"
                             class="star-btn"
                             style="font-size: 1.8rem; cursor: pointer; border:none; background:none; color: #ffc107; line-height: 1; padding: 0 10px;"
-                            onclick="toggleStar(${chargerData.stationid}, ${chargerData.pointid}, ${isFav})"
+                            onclick="toggleStar(${stationData.stationid}, 0, ${isFav})"
                             title="${isFav ? 'Remove from favorites' : 'Add to favorites'}">
                         ${isFav ? '★' : '☆'}
                     </button>
                   `
                 : `<a href="/authentication" style="text-decoration:none; font-size:1.5rem; color:#ccc;" title="Login to favorite">☆</a>`;
+            //debug
+            console.log("stationData keys:", Object.keys(stationData));
+            console.log("stationData.outlets:", stationData.outlets);
+            console.log("isArray:", Array.isArray(stationData.outlets), "length:", stationData.outlets?.length);
 
-            const statusLower = (chargerData.status || '').toLowerCase();
+            const outlets = Array.isArray(stationData.outlets) ? stationData.outlets : [];
+
+            const outletsHtml = outlets.map(o => {
+                const statusLower = (o.status || '').toLowerCase();
+                return `
+                    <div style="border:1px solid #eee; border-radius:10px; padding:10px; margin:10px 0;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+                            <div><strong>Outlet ID:</strong> ${o.pointid}</div>
+                            <span class="${getStatusClass(o.status)}"
+                                  style="padding: 2px 8px; border-radius:10px; color:white; background-color:${getStatusColor(o.status)}">
+                                ${(o.status || '').toUpperCase()}
+                            </span>
+                        </div>
+
+                        <div class="charger-detail-item" style="border-bottom:none; padding:4px 0;">
+                            <strong>Connector:</strong> ${o.connector || '-'}
+                        </div>
+                        <div class="charger-detail-item" style="border-bottom:none; padding:4px 0;">
+                            <strong>Power:</strong> ${o.cap ?? 0} kW
+                        </div>
+                        <div class="charger-detail-item" style="border-bottom:none; padding:4px 0;">
+                            <strong>Price:</strong> ${o.kwhprice != null ? `€${o.kwhprice}/kWh` : '-'}
+                        </div>
+
+                        ${o.reservationendtime
+                            ? `<div class="charger-detail-item" style="border-bottom:none; padding:4px 0;">
+                                   <small>Reserved until: ${o.reservationendtime}</small>
+                               </div>`
+                            : ''}
+
+                        ${statusLower === 'available'
+                            ? `<button onclick="reserveCharger(${o.pointid})" class="reserve-btn">Reserve this outlet</button>`
+                            : ''}
+                    </div>
+                `;
+            }).join('');
 
             contentDiv.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <div class="charger-detail-item" style="margin:0;"><strong>ID:</strong> ${chargerData.pointid}</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <div class="charger-detail-item" style="margin:0;">
+                        <strong>Station:</strong> ${stationData.stationid}
+                    </div>
                     ${starHtml}
                 </div>
 
-                <div class="charger-detail-item"><strong>Provider:</strong> ${chargerData.provider || '-'}</div>
+                <div class="charger-detail-item"><strong>Provider:</strong> ${stationData.provider || '-'}</div>
                 <div class="charger-detail-item"><strong>Address:</strong> ${addressDisplay}</div>
-                <div class="charger-detail-item"><strong>Power:</strong> ${chargerData.cap || chargerData.power || '-'} kW</div>
-                <div class="charger-detail-item"><strong>Price:</strong> €${chargerData.kwhprice}/kWh</div>
 
-                <div class="charger-detail-item" style="margin-top:10px;">
-                    <strong>Status:</strong>
-                    <span class="${getStatusClass(chargerData.status)}"
-                          style="padding: 2px 8px; border-radius:10px; color:white; background-color:${getStatusColor(chargerData.status)}">
-                        ${(chargerData.status || '').toUpperCase()}
-                    </span>
-                </div>
-
-                ${chargerData.reservationendtime
-                    ? `<div class="charger-detail-item"><small>Reserved until: ${chargerData.reservationendtime}</small></div>`
-                    : ''}
-
-                <hr>
-
-                ${statusLower === 'available'
-                    ? `<button onclick="reserveCharger(${chargerData.pointid})" class="reserve-btn">Reserve Now</button>`
-                    : ''}
-
-                <button onclick="window.open('https://www.google.com/maps/search/?api=1&query=${chargerData.lat},${chargerData.lon}', '_blank')"
+                <button onclick="window.open('https://www.google.com/maps/search/?api=1&query=${stationData.lat},${stationData.lon}', '_blank')"
                         style="width: 100%; margin-top: 10px; padding: 10px; background-color: #4285F4; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
                     📍 Navigate (Google Maps)
                 </button>
+
+                <hr>
+
+                <h4 style="margin: 10px 0;">Outlets</h4>
+                ${outletsHtml || `<div class="charger-detail-item">No outlets found.</div>`}
             `;
         })
         .catch(error => {
-            console.error('Error fetching charger details:', error);
+            console.error('Error fetching station details:', error);
             contentDiv.innerHTML = `
-                <div class="charger-detail-item"><strong>Error loading details</strong></div>
-                <div class="charger-detail-item"><strong>ID:</strong> ${charger.pointid}</div>
-                <button onclick="reserveCharger(${charger.pointid})" class="reserve-btn">Reserve</button>
+                <div class="charger-detail-item"><strong>Error loading station details</strong></div>
+                <div class="charger-detail-item"><strong>Station ID:</strong> ${charger.stationid}</div>
             `;
         });
 }
+
 
 
 

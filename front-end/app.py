@@ -87,6 +87,22 @@ def fetch_charger(request: Request, pointid: str):
     return response.json()
 #
 
+@app.get("/fetch-station/{stationid}")
+def fetch_station(request: Request, stationid: str):
+    # Παίρνουμε το userid από το cookie
+    userid_cookie = request.cookies.get("userid")
+    
+    # Το στέλνουμε στο backend ως παράμετρο
+    params = {}
+    if userid_cookie:
+        params["user_id"] = userid_cookie
+
+    # Καλούμε το point-details
+    backend_url = f"{FASTAPI_BACKEND_URL}/api/station-details/{stationid}"
+    
+    response = requests.get(backend_url, params=params, verify=VERIFY_SSL)
+    return response.json()
+
 @app.get("/", response_class=HTMLResponse, name="map_page")
 @app.get("/map", response_class=HTMLResponse)
 async def map_page(request: Request):

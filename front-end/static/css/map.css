@@ -294,3 +294,53 @@
   padding: 4px 8px;
 }
 
+/* ===== Station / Outlet sidebar ===== */
+
+#charger-sidebar h4 {
+    margin: 12px 0 8px;
+    color: #2c3e50;
+}
+
+/* Individual outlet card */
+.outlet-card {
+    border: 1px solid #e5e5e5;
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 12px;
+    background: #fafafa;
+}
+
+/* Header row: Outlet ID + status */
+.outlet-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+/* Small metadata rows */
+.outlet-meta {
+    font-size: 14px;
+    color: #34495e;
+    margin: 3px 0;
+}
+
+/* Reservation text */
+.outlet-reservation {
+    font-size: 12px;
+    color: #7f8c8d;
+    margin-top: 4px;
+}
+
+/* Reserve button inside outlet */
+.outlet-card .reserve-btn {
+    margin-top: 8px;
+}
+
+/* Status pill reuse (already exists, but this improves spacing) */
+.outlet-status span {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+
