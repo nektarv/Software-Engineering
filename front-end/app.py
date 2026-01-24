@@ -69,7 +69,7 @@ def _to_int_or_none(x):
 # για να παρει και την διευθυνση
 #
 #
-# Experimental
+# Depreciated fetch-charger function
 @app.get("/fetch-charger/{pointid}")
 def fetch_charger(request: Request, pointid: str):
     # Παίρνουμε το userid από το cookie
@@ -85,7 +85,7 @@ def fetch_charger(request: Request, pointid: str):
     
     response = requests.get(backend_url, params=params, verify=VERIFY_SSL)
     return response.json()
-# Experimental over
+#
 
 @app.get("/", response_class=HTMLResponse, name="map_page")
 @app.get("/map", response_class=HTMLResponse)
@@ -99,7 +99,7 @@ async def map_page(request: Request):
         print(f"Cleanup failed: {e}")
 
     #FETCH POINTS
-    response = requests.get(f"{FASTAPI_BACKEND_URL}/api/points", verify=VERIFY_SSL)
+    response = requests.get(f"{FASTAPI_BACKEND_URL}/api/stations", verify=VERIFY_SSL)
     chargers = response.json()
 
     # COOKIES
