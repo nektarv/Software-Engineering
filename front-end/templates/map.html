@@ -17,33 +17,35 @@
 
 {% block content %}
 <div class="map-container">
-    <!-- Page Title -->
-    <h1 style="padding: 20px;">Charger Map</h1>
-    <p style="padding: 0 20px 20px 20px;">Click on any charger pin to view details and make a reservation.</p>
+    <!-- Sidebar (hidden until click) -->
+    <aside id="charger-sidebar" class="sidebar hidden">
+        <div class="sidebar-header">
+            <h3 style="margin:0;">Charger information</h3>
+            <button type="button" class="sidebar-close" onclick="closeSidebar()">✕</button>
+        </div>
 
-    <!-- Map Controls (floating over map) -->
-    <div class="map-controls">
-        <h4>Filter by Status:</h4>
-        
-        <select id="status-filter" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
-            <option value="all">Show All</option>
-            <option value="available" selected>Available</option>
-            <option value="charging">Charging</option>
-            <option value="reserved">Reserved</option>
-            <option value="malfunction">Malfunction</option>
-            <option value="offline">Offline</option>
-        </select>
-    </div>
-
-    <!-- Map Container -->
-    <div id="map"></div>
-
-    <!-- Charger Details Panel (initially hidden) -->
-    <div id="charger-details" style="display: none;">
-        <h3>Charger Details</h3>
         <div id="charger-info-content"></div>
+    </aside>
+
+    <!-- Map column -->
+    <div class="map-main">
+        <div class="map-controls">
+            <h4>Filter by Status:</h4>
+
+            <select id="status-filter" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+                <option value="all">Show All</option>
+                <option value="available" selected>Available</option>
+                <option value="charging">Charging</option>
+                <option value="reserved">Reserved</option>
+                <option value="malfunction">Malfunction</option>
+                <option value="offline">Offline</option>
+            </select>
+        </div>
+
+        <div id="map"></div>
     </div>
 </div>
+
 
 <div id="reservationModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:10000; align-items:center; justify-content:center;">
     <div style="background:white; padding:25px; border-radius:12px; width:300px; text-align:center; color: black;">
@@ -86,6 +88,10 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     maxZoom: 19
 }).addTo(map);
+
+// This line of code makes the sidebar close when clicking the map
+//map.on('click', () => closeSidebar());
+
 
 // Store charger markers for filtering
 let chargerMarkers = [];
@@ -147,57 +153,69 @@ function createMarkers(chargers) {
         chargerMarkers.push(marker);
     });
 }
+// Auxiliary functions for showchargerdetails, to help with sidebar
+
+function openSidebar() {
+    const sidebar = document.getElementById('charger-sidebar');
+    if (!sidebar) return;
+
+    sidebar.classList.remove('hidden');
+
+    // Let CSS transition apply, then force Leaflet to recalc
+    setTimeout(() => map.invalidateSize(), 220);
+}
+
+function closeSidebar() {
+    const sidebar = document.getElementById('charger-sidebar');
+    if (!sidebar) return;
+
+    sidebar.classList.add('hidden');
+    setTimeout(() => map.invalidateSize(), 220);
+}
 
 // Show charger details
 // Show charger details with API call
 // Show charger details with Client-Side Reverse Geocoding (Address Lookup)
 // Show charger details
 function showChargerDetails(charger) {
-    const detailsPanel = document.getElementById('charger-details');
+    const sidebar = document.getElementById('charger-sidebar');
     const contentDiv = document.getElementById('charger-info-content');
+    if (!sidebar || !contentDiv) return;
 
-    // Show loading state
+    // Show sidebar
+    sidebar.classList.remove('hidden');
+
+    // Loading state
     contentDiv.innerHTML = `
         <div class="charger-detail-item">
             <strong>Loading charger details...</strong>
         </div>
     `;
 
-    detailsPanel.style.display = 'block';
-
-    // Fetch details including favorite status
     fetch(`/fetch-charger/${charger.pointid}`)
         .then(response => {
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             return response.json();
         })
         .then(chargerData => {
-            
             const addressDisplay = chargerData.address || "Address details not available";
 
-            // --- ΛΟΓΙΚΗ ΓΙΑ ΤΟ ΑΣΤΕΡΑΚΙ ---
-            let starHtml = '';
-            if (isUserLoggedIn) {
-                // Αν είναι 1 είναι αγαπημένο (★), αλλιώς άδειο (☆)
-                const isFav = chargerData.is_favourite === 1;
-                const starIcon = isFav ? '★' : '☆';
-                
-                // Φτιάχνουμε το κουμπί
-                starHtml = `
-                    <button id="star-btn-${chargerData.pointid}" 
-                            class="star-btn" 
+            // Favorite star
+            const isFav = chargerData.is_favourite === 1;
+            const starHtml = isUserLoggedIn
+                ? `
+                    <button id="star-btn-${chargerData.pointid}"
+                            class="star-btn"
                             style="font-size: 1.8rem; cursor: pointer; border:none; background:none; color: #ffc107; line-height: 1; padding: 0 10px;"
                             onclick="toggleStar(${chargerData.stationid}, ${chargerData.pointid}, ${isFav})"
                             title="${isFav ? 'Remove from favorites' : 'Add to favorites'}">
-                        ${starIcon}
+                        ${isFav ? '★' : '☆'}
                     </button>
-                `;
-            } else {
-                // Αν δεν είναι logged in, απλά δείχνουμε ένα αχνό αστεράκι ή τίποτα
-                starHtml = `<a href="/authentication" style="text-decoration:none; font-size:1.5rem; color:#ccc;" title="Login to favorite">☆</a>`;
-            }
+                  `
+                : `<a href="/authentication" style="text-decoration:none; font-size:1.5rem; color:#ccc;" title="Login to favorite">☆</a>`;
 
-            // --- ΕΜΦΑΝΙΣΗ ΣΤΟ HTML ---
+            const statusLower = (chargerData.status || '').toLowerCase();
+
             contentDiv.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <div class="charger-detail-item" style="margin:0;"><strong>ID:</strong> ${chargerData.pointid}</div>
@@ -208,25 +226,26 @@ function showChargerDetails(charger) {
                 <div class="charger-detail-item"><strong>Address:</strong> ${addressDisplay}</div>
                 <div class="charger-detail-item"><strong>Power:</strong> ${chargerData.cap || chargerData.power || '-'} kW</div>
                 <div class="charger-detail-item"><strong>Price:</strong> €${chargerData.kwhprice}/kWh</div>
-                
+
                 <div class="charger-detail-item" style="margin-top:10px;">
-                    <strong>Status:</strong> 
-                    <span class="${getStatusClass(chargerData.status)}" style="padding: 2px 8px; border-radius:10px; color:white; background-color:${getStatusColor(chargerData.status)}">
-                        ${chargerData.status.toUpperCase()}
+                    <strong>Status:</strong>
+                    <span class="${getStatusClass(chargerData.status)}"
+                          style="padding: 2px 8px; border-radius:10px; color:white; background-color:${getStatusColor(chargerData.status)}">
+                        ${(chargerData.status || '').toUpperCase()}
                     </span>
                 </div>
 
-                ${chargerData.reservationendtime ? 
-                    `<div class="charger-detail-item"><small>Reserved until: ${chargerData.reservationendtime}</small></div>` 
+                ${chargerData.reservationendtime
+                    ? `<div class="charger-detail-item"><small>Reserved until: ${chargerData.reservationendtime}</small></div>`
                     : ''}
 
                 <hr>
-                
-                ${chargerData.status.toLowerCase() === 'available' ? 
-                    `<button onclick="reserveCharger(${chargerData.pointid})" class="reserve-btn">Reserve Now</button>` 
+
+                ${statusLower === 'available'
+                    ? `<button onclick="reserveCharger(${chargerData.pointid})" class="reserve-btn">Reserve Now</button>`
                     : ''}
 
-                <button onclick="window.open('https://www.google.com/maps/search/?api=1&query=${chargerData.lat},${chargerData.lon}', '_blank')" 
+                <button onclick="window.open('https://www.google.com/maps/search/?api=1&query=${chargerData.lat},${chargerData.lon}', '_blank')"
                         style="width: 100%; margin-top: 10px; padding: 10px; background-color: #4285F4; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
                     📍 Navigate (Google Maps)
                 </button>
@@ -241,6 +260,8 @@ function showChargerDetails(charger) {
             `;
         });
 }
+
+
 
 
 

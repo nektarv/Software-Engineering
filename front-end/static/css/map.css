@@ -1,12 +1,30 @@
 /* static/css/map.css */
 
-#map {
-    height: 600px;
-    width: 100%;
-    border-radius: 8px;
-    margin: 20px 0;
-    z-index: 1;
+/* Make container act like a full-page flex row */
+.map-container{
+  display: flex;
+  width: 100%;
+  height: calc(100vh - 40px); /* adjust 140px if your header+footer differ */
+  padding: 0;
+  margin: 0;
 }
+
+
+/* Map column fills remaining space */
+.map-main{
+  flex: 1;
+  position: relative;
+  min-width: 0; /* important so flexbox allows shrinking properly */
+}
+
+/* Make the map fill the map column */
+#map{
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  border-radius: 0;
+}
+
 
 .charger-info {
     padding: 10px;
@@ -20,21 +38,55 @@
     padding-bottom: 8px;
 }
 
+/* Status pill base (used in details panel) */
 .charger-status {
     display: inline-block;
     padding: 4px 8px;
-    border-radius: 4px;
+    border-radius: 999px;
     font-size: 12px;
     font-weight: bold;
     margin: 5px 0;
 }
 
+/* ✅ Matches your JS statuses:
+   available, charging, reserved, malfunction, offline, unknown */
 .status-available {
     background-color: #d4edda;
     color: #155724;
     border: 1px solid #c3e6cb;
 }
 
+.status-charging {
+    background-color: #dbeafe; /* light blue */
+    color: #1e3a8a;            /* deep blue */
+    border: 1px solid #bfdbfe;
+}
+
+.status-reserved {
+    background-color: #ede9fe; /* light purple */
+    color: #4c1d95;            /* deep purple */
+    border: 1px solid #ddd6fe;
+}
+
+.status-malfunction {
+    background-color: #ffedd5; /* light orange */
+    color: #9a3412;            /* deep orange */
+    border: 1px solid #fed7aa;
+}
+
+.status-offline {
+    background-color: #e5e7eb; /* light gray */
+    color: #374151;            /* dark gray */
+    border: 1px solid #d1d5db;
+}
+
+.status-unknown {
+    background-color: #cffafe; /* light cyan */
+    color: #155e75;            /* teal-ish */
+    border: 1px solid #a5f3fc;
+}
+
+/* Backwards compatibility (if older statuses appear anywhere) */
 .status-occupied {
     background-color: #f8d7da;
     color: #721c24;
@@ -51,22 +103,25 @@
     background-color: #3498db;
     color: white;
     border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
+    padding: 10px 16px;
+    border-radius: 6px;
     cursor: pointer;
     margin-top: 10px;
     font-size: 14px;
-    transition: background-color 0.3s;
+    transition: background-color 0.2s ease, transform 0.08s ease;
     width: 100%;
+    font-weight: 600;
 }
 
 .reserve-btn:hover {
     background-color: #2980b9;
+    transform: translateY(-1px);
 }
 
 .reserve-btn:disabled {
     background-color: #95a5a6;
     cursor: not-allowed;
+    transform: none;
 }
 
 .map-container {
@@ -74,10 +129,10 @@
     padding: 20px;
 }
 
-.map-controls {
+.map-controls{
     position: absolute;
-    top: 90px;
-    right: 40px;
+    top: 20px;
+    right: 20px;
     z-index: 1000;
     background: white;
     padding: 15px;
@@ -119,15 +174,21 @@
 #charger-details {
     background: white;
     padding: 20px;
-    border-radius: 8px;
+    border-radius: 10px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     margin-top: 20px;
     border-left: 4px solid #3498db;
 }
 
+#charger-details h3 {
+    margin-top: 0;
+    margin-bottom: 12px;
+    color: #2c3e50;
+}
+
 .charger-detail-item {
     margin: 8px 0;
-    padding: 5px 0;
+    padding: 6px 0;
     border-bottom: 1px solid #eee;
 }
 
@@ -156,32 +217,10 @@
     color: #34495e;
 }
 
-/* Responsive design */
-@media (max-width: 768px) {
-    #map {
-        height: 400px;
-    }
-    
-    .map-controls {
-        position: relative;
-        top: 0;
-        right: 0;
-        margin-bottom: 15px;
-        width: 100%;
-    }
-    
-    .map-container {
-        padding: 10px;
-    }
-}
-
-/* Custom marker styles */
-.leaflet-marker-icon {
-    transition: transform 0.2s;
-}
-
-.leaflet-marker-icon:hover {
-    transform: scale(1.2);
+/* ⭐ Optional: small polish for the favorite star button (you set inline styles too) */
+.star-btn:hover {
+    filter: brightness(0.95);
+    transform: translateY(-1px);
 }
 
 /* Popup styling */
@@ -193,3 +232,65 @@
     margin-top: 0;
     color: #2c3e50;
 }
+
+/* Responsive design */
+@media (max-width: 768px) {
+    #map {
+        height: 400px;
+    }
+
+    .map-controls{
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        min-width: 180px;
+        }
+
+
+    .map-container {
+        padding: 10px;
+    }
+}
+
+
+/* Sidebar is a real column */
+.sidebar{
+  width: 320px;
+  background: #ffffff;
+  border-right: 1px solid #e5e5e5;
+  box-shadow: none;
+  padding: 16px;
+  overflow-y: auto;
+  transition: width 0.2s ease, padding 0.2s ease;
+}
+
+/* Hidden: sidebar collapses and doesn't take space */
+.sidebar.hidden{
+  width: 0;
+  padding-left: 0;
+  padding-right: 0;
+  overflow: hidden;
+  border-right: none;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.sidebar-close {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 4px 8px;
+}
+
