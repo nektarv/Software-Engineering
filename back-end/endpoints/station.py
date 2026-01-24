@@ -45,7 +45,8 @@ def get_stations(
                 s.Longitude AS lon,
                 s.Latitude AS lat,
                 o.power AS cap,
-                o.state AS status
+                o.state AS status,
+                s.stationid AS stationid
             FROM outlet o
             JOIN station s ON s.stationid = o.stationid
         """
@@ -82,7 +83,7 @@ def get_stations(
             return Response(status_code=204)
 
         if format == "csv":
-            csv_text = _rows_to_csv(rows, ["pointid", "lon", "lat", "cap", "status"])
+            csv_text = _rows_to_csv(rows, ["pointid", "lon", "lat", "cap", "status","stationid"])
             return PlainTextResponse(content=csv_text, media_type="text/csv; charset=utf-8")
 
         return rows
