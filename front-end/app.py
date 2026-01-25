@@ -399,7 +399,7 @@ async def stats_page(request: Request, range: int = 30):
         "stats.html",
         {
             "request": request,
-            "active_page": "stats",
+            "active_page": "statistics",
             "stats": stats_data,        # Τα δεδομένα από τη βάση
             "current_range": range,     # Για να ξέρει το dropdown τι να δείξει
             "userid": userid_i,          # Για τα JavaScript calls (favorites)
