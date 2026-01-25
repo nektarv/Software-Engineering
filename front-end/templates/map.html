@@ -221,19 +221,24 @@ function showChargerDetails(charger) {
             const addressDisplay = stationData.address || "Address details not available";
 
             const outlets = Array.isArray(stationData.outlets) ? stationData.outlets : [];
-            // Station-level favourite star
-            const isFav = stationData.is_favourite === 1;
+            const outletIds = outlets.map(o => Number(o.pointid));
+
+            // Station is "fav" if ANY of its outlets are in the cached set
+            const isFav = outletIds.some(id => favouriteOutletSet.has(id));
+
             const starHtml = isUserLoggedIn
-                ? `
-                    <button id="star-btn-station-${stationData.stationid}"
-                            class="star-btn"
-                            style="font-size: 1.8rem; cursor: pointer; border:none; background:none; color: #ffc107; line-height: 1; padding: 0 10px;"
-                            onclick="toggleStar(${stationData.stationid}, 0, ${isFav})"
-                            title="${isFav ? 'Remove from favorites' : 'Add to favorites'}">
-                        ${isFav ? '★' : '☆'}
-                    </button>
-                  `
-                : `<a href="/authentication" style="text-decoration:none; font-size:1.5rem; color:#ccc;" title="Login to favorite">☆</a>`;
+            ? `
+                <button id="star-btn-station-${stationData.stationid}"
+                        class="star-btn"
+                        style="font-size: 1.8rem; cursor: pointer; border:none; background:none; color: #ffc107; line-height: 1; padding: 0 10px;"
+                        onclick='toggleStarStation(${stationData.stationid}, ${JSON.stringify(outletIds)})'
+                        title="${isFav ? 'Remove from favorites' : 'Add to favorites'}">
+                    ${isFav ? '★' : '☆'}
+                </button>
+                `
+            : `<a href="/authentication" style="text-decoration:none; font-size:1.5rem; color:#ccc;" title="Login to favorite">☆</a>`;
+
+
 
             const dropdown = document.getElementById('status-filter');
             const selectedStatus = dropdown ? dropdown.value : "all";
@@ -543,6 +548,76 @@ function flipfavourites() {
         applyFilters();
     }
 }
+
+async function toggleStarStation(stationId, outletIds) {
+    if (!isUserLoggedIn) {
+        window.location.href = "/authentication";
+        return;
+    }
+
+    // 1) Make sure the Set is populated before we decide current state
+    await ensureFavouritesLoaded();
+
+    const starBtn = document.getElementById(`star-btn-station-${stationId}`);
+    const ids = outletIds.map(Number);
+
+    // 2) Current state derived from Set (source of truth in the UI)
+    const isCurrentlyFav = ids.some(id => favouriteOutletSet.has(id));
+    const willBeFav = !isCurrentlyFav;
+
+    // 3) Optimistic update: update Set + UI immediately (NO waiting for DB)
+    if (willBeFav) {
+        ids.forEach(id => favouriteOutletSet.add(id));
+        if (starBtn) {
+            starBtn.innerHTML = "★";
+            starBtn.title = "Remove from favorites";
+        }
+    } else {
+        ids.forEach(id => favouriteOutletSet.delete(id));
+        if (starBtn) {
+            starBtn.innerHTML = "☆";
+            starBtn.title = "Add to favorites";
+        }
+    }
+
+    // if favourites-only is enabled, refresh markers immediately
+    applyFilters();
+
+    // 4) Fire-and-forget DB update (do NOT await)
+    const endpoint = willBeFav ? "/favourites/add_json" : "/favourites/remove_json";
+    const formData = new FormData();
+    formData.append("stationid", stationId);
+
+    fetch(endpoint, { method: "POST", body: formData })
+        .then(async (res) => {
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            // optional: check json success flag if you want
+            // const data = await res.json();
+            // if (data && data.success === false) throw new Error("Backend rejected");
+        })
+        .catch((err) => {
+            console.error("Failed to persist favourite to DB:", err);
+
+            // OPTIONAL (recommended): revert optimistic change if persistence fails
+            // Comment this block out if you prefer "best-effort" with no revert.
+            if (willBeFav) {
+                ids.forEach(id => favouriteOutletSet.delete(id));
+                if (starBtn) {
+                    starBtn.innerHTML = "☆";
+                    starBtn.title = "Add to favorites";
+                }
+            } else {
+                ids.forEach(id => favouriteOutletSet.add(id));
+                if (starBtn) {
+                    starBtn.innerHTML = "★";
+                    starBtn.title = "Remove from favorites";
+                }
+            }
+            applyFilters();
+        });
+}
+
+
 
 // Apply filters
 // --- ΝΕΟΣ ΚΩΔΙΚΑΣ ΜΟΝΟ ΓΙΑ ΤΑ ΦΙΛΤΡΑ ---
