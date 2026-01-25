@@ -103,6 +103,15 @@ def fetch_station(request: Request, stationid: str):
     response = requests.get(backend_url, params=params, verify=VERIFY_SSL)
     return response.json()
 
+@app.get("/fetch-favourites/{userid}")
+def fetch_favourites(request: Request, userid: str):
+
+    # Καλούμε το point-details
+    backend_url = f"{FASTAPI_BACKEND_URL}/api/favourites/{userid}"
+    
+    response = requests.get(backend_url, verify=VERIFY_SSL)
+    return response.json()
+
 @app.get("/", response_class=HTMLResponse, name="map_page")
 @app.get("/map", response_class=HTMLResponse)
 async def map_page(request: Request):

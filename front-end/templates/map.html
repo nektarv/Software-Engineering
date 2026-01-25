@@ -38,8 +38,15 @@
                 <option value="charging">Charging</option>
                 <option value="reserved">Reserved</option>
                 <option value="malfunction">Malfunction</option>
+
                 <option value="offline">Offline</option>
             </select>
+        </div>
+        <div class="map-favourites">
+        <button type="button" id="favourite-toggle" onclick="flipfavourites()" class="favourite-toggle" >
+            <span class="fav-star" aria-hidden="true">☆</span>
+            <span class="fav-title">Favourites</span>
+        </button>
         </div>
 
         <div id="map"></div>
@@ -213,6 +220,7 @@ function showChargerDetails(charger) {
         .then(stationData => {
             const addressDisplay = stationData.address || "Address details not available";
 
+            const outlets = Array.isArray(stationData.outlets) ? stationData.outlets : [];
             // Station-level favourite star
             const isFav = stationData.is_favourite === 1;
             const starHtml = isUserLoggedIn
@@ -230,7 +238,7 @@ function showChargerDetails(charger) {
             const dropdown = document.getElementById('status-filter');
             const selectedStatus = dropdown ? dropdown.value : "all";
             const seeOnlyFiltered = sidebar.dataset.seeOnlyFiltered === "true";
-            const outlets = Array.isArray(stationData.outlets) ? stationData.outlets : [];
+            //const outlets = Array.isArray(stationData.outlets) ? stationData.outlets : [];
 
 
             const outletsHtml = outlets.map(o => {
@@ -460,25 +468,106 @@ document.getElementById('confirmReserveBtn').addEventListener('click', async fun
     }
 });
 
+
+
+
+
+let onlyFavourites = false;          // your toggle boolean
+let favouritesLoaded = false;        // cache flag
+let favouriteOutletSet = new Set();  // membership test is O(1)
+let favouritesLoadingPromise = null; // prevents double-fetch if user clicks fast
+
+
+function ensureFavouritesLoaded() {
+    // already loaded
+    if (favouritesLoaded) return Promise.resolve();
+
+    // already in-flight
+    if (favouritesLoadingPromise) return favouritesLoadingPromise;
+
+    // must be logged in + have id
+    if (!isUserLoggedIn || !currentUserId) {
+        return Promise.reject(new Error("Not logged in"));
+    }
+
+    favouritesLoadingPromise = fetch(`/fetch-favourites/${currentUserId}`)
+        .then(res => {
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.json();
+        })
+        .then(ids => {
+            // ids is expected like: [383, 384, 385, ...]
+            favouriteOutletSet = new Set((Array.isArray(ids) ? ids : []).map(Number));
+            favouritesLoaded = true;
+        })
+        .finally(() => {
+            favouritesLoadingPromise = null;
+        });
+
+    return favouritesLoadingPromise;
+}
+
+
+function flipfavourites() {
+    if (!isUserLoggedIn) {
+        window.location.href = "/authentication";
+        return;
+    }
+
+    onlyFavourites = !onlyFavourites;
+
+    // update star UI
+    const btn = document.getElementById("favourite-toggle");
+    const star = btn ? btn.querySelector(".fav-star") : null;
+    if (btn && star) {
+        btn.classList.toggle("is-on", onlyFavourites);
+        star.textContent = onlyFavourites ? "★" : "☆";
+    }
+
+    // if turning ON, load favourites once, then apply filters
+    if (onlyFavourites) {
+        ensureFavouritesLoaded()
+            .then(() => applyFilters())
+            .catch(err => {
+                console.error("Failed to load favourites:", err);
+                // fall back: turn it back off if fetch fails
+                onlyFavourites = false;
+                if (btn && star) {
+                    btn.classList.remove("is-on");
+                    star.textContent = "☆";
+                }
+                applyFilters();
+            });
+    } else {
+        // turning OFF: no fetch needed
+        applyFilters();
+    }
+}
+
 // Apply filters
 // --- ΝΕΟΣ ΚΩΔΙΚΑΣ ΜΟΝΟ ΓΙΑ ΤΑ ΦΙΛΤΡΑ ---
 
 // Συνάρτηση φίλτρου για Dropdown
 function applyFilters() {
     const dropdown = document.getElementById('status-filter');
-    
-    // Αν δεν βρεθεί το dropdown, σταματάμε (για αποφυγή errors)
     if (!dropdown) return;
 
-    const selectedStatus = dropdown.value; // 'all', 'available', 'charging' κλπ.
+    const selectedStatus = dropdown.value; // 'all', 'available', etc.
 
     const filtered = currentChargers.filter(charger => {
-        // Αν είναι 'all', τα δείχνουμε όλα
-        if (selectedStatus === 'all') {
-            return true;
+        // 1) FAVOURITES FILTER (if enabled)
+        if (onlyFavourites) {
+            // if favourites not loaded yet, show nothing (or you can choose to show all)
+            if (!favouritesLoaded) return false;
+
+            const pid = Number(charger.pointid);
+            if (!favouriteOutletSet.has(pid)) return false;
         }
-        // Αλλιώς συγκρίνουμε το status
-        return charger.status.toLowerCase() === selectedStatus;
+
+        // 2) STATUS FILTER
+        if (selectedStatus === 'all') return true;
+
+        return (charger.status || '').toLowerCase() === selectedStatus;
     });
 
     createMarkers(filtered);
