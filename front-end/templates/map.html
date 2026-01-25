@@ -174,10 +174,11 @@ function closeSidebar() {
 }
 
 // Show charger details
-// Show charger details with API call
-// Show charger details with Client-Side Reverse Geocoding (Address Lookup)
-// Show charger details
+
+let lastClickedCharger = null; // this is a global variable that is needed for the "show all chargers/show only filtered chargers" button in the sidebar
+
 function showChargerDetails(charger) {
+    lastClickedCharger = charger //we need to pass local variable charger into global variable lastClickedCharger in order for it to be callable from outside
     const sidebar = document.getElementById('charger-sidebar');
     const contentDiv = document.getElementById('charger-info-content');
     if (!sidebar || !contentDiv) return;
@@ -191,6 +192,10 @@ function showChargerDetails(charger) {
             <div class="charger-detail-item">Update /api/stations to include stationid.</div>
         `;
         return;
+    }
+
+    if (sidebar.dataset.seeOnlyFiltered === undefined) {
+        sidebar.dataset.seeOnlyFiltered = "true";
     }
 
     // Loading state
@@ -221,46 +226,49 @@ function showChargerDetails(charger) {
                     </button>
                   `
                 : `<a href="/authentication" style="text-decoration:none; font-size:1.5rem; color:#ccc;" title="Login to favorite">☆</a>`;
-            //debug
-            console.log("stationData keys:", Object.keys(stationData));
-            console.log("stationData.outlets:", stationData.outlets);
-            console.log("isArray:", Array.isArray(stationData.outlets), "length:", stationData.outlets?.length);
 
+            const dropdown = document.getElementById('status-filter');
+            const selectedStatus = dropdown ? dropdown.value : "all";
+            const seeOnlyFiltered = sidebar.dataset.seeOnlyFiltered === "true";
             const outlets = Array.isArray(stationData.outlets) ? stationData.outlets : [];
+
 
             const outletsHtml = outlets.map(o => {
                 const statusLower = (o.status || '').toLowerCase();
-                return `
-                    <div style="border:1px solid #eee; border-radius:10px; padding:10px; margin:10px 0;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
-                            <div><strong>Outlet ID:</strong> ${o.pointid}</div>
-                            <span class="${getStatusClass(o.status)}"
-                                  style="padding: 2px 8px; border-radius:10px; color:white; background-color:${getStatusColor(o.status)}">
-                                ${(o.status || '').toUpperCase()}
-                            </span>
-                        </div>
+                if (!seeOnlyFiltered || selectedStatus === "all" || selectedStatus === statusLower){
+                    return `
+                        <div style="border:1px solid #eee; border-radius:10px; padding:10px; margin:10px 0;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+                                <div><strong>Outlet ID:</strong> ${o.pointid}</div>
+                                <span class="${getStatusClass(o.status || '')}"
+                                    style="padding: 2px 8px; border-radius:10px; color:white; background-color:${getStatusColor(o.status||'')}">
+                                    ${(o.status || '').toUpperCase()}
+                                </span>
+                            </div>
 
-                        <div class="charger-detail-item" style="border-bottom:none; padding:4px 0;">
-                            <strong>Connector:</strong> ${o.connector || '-'}
-                        </div>
-                        <div class="charger-detail-item" style="border-bottom:none; padding:4px 0;">
-                            <strong>Power:</strong> ${o.cap ?? 0} kW
-                        </div>
-                        <div class="charger-detail-item" style="border-bottom:none; padding:4px 0;">
-                            <strong>Price:</strong> ${o.kwhprice != null ? `€${o.kwhprice}/kWh` : '-'}
-                        </div>
+                            <div class="charger-detail-item" style="border-bottom:none; padding:4px 0;">
+                                <strong>Connector:</strong> ${o.connector || '-'}
+                            </div>
+                            <div class="charger-detail-item" style="border-bottom:none; padding:4px 0;">
+                                <strong>Power:</strong> ${o.cap ?? 0} kW
+                            </div>
+                            <div class="charger-detail-item" style="border-bottom:none; padding:4px 0;">
+                                <strong>Price:</strong> ${o.kwhprice != null ? `€${o.kwhprice}/kWh` : '-'}
+                            </div>
 
-                        ${o.reservationendtime
-                            ? `<div class="charger-detail-item" style="border-bottom:none; padding:4px 0;">
-                                   <small>Reserved until: ${o.reservationendtime}</small>
-                               </div>`
-                            : ''}
+                            ${o.reservationendtime
+                                ? `<div class="charger-detail-item" style="border-bottom:none; padding:4px 0;">
+                                    <small>Reserved until: ${o.reservationendtime}</small>
+                                </div>`
+                                : ''}
 
-                        ${statusLower === 'available'
-                            ? `<button onclick="reserveCharger(${o.pointid})" class="reserve-btn">Reserve this outlet</button>`
-                            : ''}
-                    </div>
-                `;
+                            ${statusLower === 'available'
+                                ? `<button onclick="reserveCharger(${o.pointid})" class="reserve-btn">Reserve this outlet</button>`
+                                : ''}
+                        </div>
+                    `;
+                }
+                return'';
             }).join('');
 
             contentDiv.innerHTML = `
@@ -282,7 +290,18 @@ function showChargerDetails(charger) {
                 <hr>
 
                 <h4 style="margin: 10px 0;">Outlets</h4>
+                <button type="button"
+                        style="width:100%; padding:10px; margin-bottom:10px; border-radius:6px; border:1px solid #ccc; background:white; cursor:pointer;"
+                        onclick="
+                            const sb = document.getElementById('charger-sidebar');
+                            sb.dataset.seeOnlyFiltered = (sb.dataset.seeOnlyFiltered === 'true') ? 'false' : 'true';
+                            showChargerDetails(lastClickedCharger);
+                        ">
+                    ${sidebar.dataset.seeOnlyFiltered === "true" ? "Show all outlets" : "Show only filtered outlets"}
+                </button>
+
                 ${outletsHtml || `<div class="charger-detail-item">No outlets found.</div>`}
+                
             `;
         })
         .catch(error => {
