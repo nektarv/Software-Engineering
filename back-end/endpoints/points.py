@@ -28,8 +28,8 @@ def get_points(
     #Returns outlet list with station lat/lon.
     
     if status is not None and status not in ALLOWED_STATUSES:
-        payload = build_error_log(request, 400, "Bad request", f"Invalid status '{status}'")
-        return JSONResponse(status_code=400, content=payload)
+        payload = build_error_log(request, 401, "Bad request", f"Invalid status '{status}'")
+        return JSONResponse(status_code=401, content=payload)
 
     if format not in ("json", "csv"):
         payload = build_error_log(request, 400, "Bad request", f"Invalid format '{format}'")
@@ -41,6 +41,7 @@ def get_points(
 
         sql = """
             SELECT
+                s.provider AS providerName,
                 o.outletid AS pointid,
                 s.Longitude AS lon,
                 s.Latitude AS lat,
@@ -64,7 +65,7 @@ def get_points(
             return Response(status_code=204)
 
         if format == "csv":
-            csv_text = _rows_to_csv(rows, ["pointid", "lon", "lat", "cap", "status"])
+            csv_text = _rows_to_csv(rows, ["providerName","pointid", "lon", "lat", "cap", "status"])
             return PlainTextResponse(content=csv_text, media_type="text/csv; charset=utf-8")
 
         return rows
