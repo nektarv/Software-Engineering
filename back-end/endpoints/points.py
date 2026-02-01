@@ -28,8 +28,8 @@ def get_points(
     #Returns outlet list with station lat/lon.
     
     if status is not None and status not in ALLOWED_STATUSES:
-        payload = build_error_log(request, 401, "Bad request", f"Invalid status '{status}'")
-        return JSONResponse(status_code=401, content=payload)
+        payload = build_error_log(request, 400, "Bad request", f"Invalid status '{status}'")
+        return JSONResponse(status_code=400, content=payload)
 
     if format not in ("json", "csv"):
         payload = build_error_log(request, 400, "Bad request", f"Invalid format '{format}'")
