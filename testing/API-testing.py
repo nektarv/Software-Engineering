@@ -428,6 +428,7 @@ if __name__ == "__main__":
         check_error_type=True
     )
     
-
+    print("------------------------\n")
+    print("API TEST COMPLETED SUCCESSFULLY")
 
 
