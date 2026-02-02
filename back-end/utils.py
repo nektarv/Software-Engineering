@@ -1,13 +1,19 @@
 from datetime import datetime
 from fastapi import Request
 import mysql.connector
+import os
+import os
 
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+FLAG_FILE = os.path.join(BASE_DIR, "testing", ".USE_TEST_DB")
+
+DB_NAME = "charging_database_test" if os.path.exists(FLAG_FILE) else "charging_database"
 
 DB_CONFIG = {
     "host": "localhost",
     "user": "root",
-    "password": "root", #change it back to root before commit
-    "database": "charging_database",
+    "password": "root",
+    "database": DB_NAME,
 }
 
 

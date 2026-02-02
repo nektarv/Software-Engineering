@@ -2,6 +2,8 @@ import requests
 import csv, io
 import itertools
 import urllib3
+import os
+import sys
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
@@ -317,8 +319,11 @@ def test_post_endpoint(
 
 
 if __name__ == "__main__":
-
     
+    if not os.path.exists(".USE_TEST_DB"):
+        print("NOT CONNECTED TO TESTING DATABASE - SEE /testing/README.txt")
+        sys.exit(1)
+
     test_get_endpoint(
         endpoint="/points",
         query_params={"status":["offline","lmao"], "format":["csv","fakeformat"]},
