@@ -2,8 +2,8 @@
 
 **Indicative contents:**
 
-* Application source code for data entry, management, and access (backend).
-* Database dump (SQL or JSON).
-* Back-end functional tests.
-* Back-end unit tests.
-* RESTful API.
+* Core RESTful API source code.
+* Administrative management modules for CLI.
+* Real-time energy pricing subsystem.
+* SSL/TLS security assets.
+* Dependencies and verification utilities.
