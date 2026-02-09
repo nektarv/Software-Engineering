@@ -1,10 +1,9 @@
 # Back-end
 
-Ενδεικτικά περιεχόμενα:
+**Indicative contents:**
 
-- Πηγαίος κώδικας εφαρμογής για εισαγωγή, διαχείριση και
-  πρόσβαση σε δεδομένα (backend).
-- Database dump (sql ή json)
-- Back-end functional tests.
-- Back-end unit tests.
-- RESTful API.
+* Application source code for data entry, management, and access (backend).
+* Database dump (SQL or JSON).
+* Back-end functional tests.
+* Back-end unit tests.
+* RESTful API.
