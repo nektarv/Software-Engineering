@@ -1,9 +1,9 @@
-# Front-end
+# Back-end
 
 **Indicative contents:**
 
-* Application source code for user interface management and API communication.
-* Dynamic page rendering templates (UI Templates).
-* Styling and formatting files (CSS).
-* Security certificates (SSL/TLS).
-* Environment dependency management files.
+* Core RESTful API source code.
+* Administrative management modules for CLI.
+* Real-time energy pricing subsystem.
+* SSL/TLS security assets.
+* Dependencies and verification utilities.
