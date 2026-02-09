@@ -1,9 +1,9 @@
 # Front-end
 
-**Ενδεικτικά περιεχόμενα:**
+**Indicative contents:**
 
-* Πηγαίος κώδικας εφαρμογής για τη διαχείριση της διεπαφής χρήστη και την επικοινωνία με το API.
-* Πρότυπα δυναμικής απεικόνισης σελίδων (UI Templates).
-* Αρχεία μορφοποίησης και στυλ (CSS).
-* Πιστοποιητικά ασφαλείας (SSL/TLS).
-* Αρχεία διαχείρισης εξαρτήσεων περιβάλλοντος.
+* Application source code for user interface management and API communication.
+* Dynamic page rendering templates (UI Templates).
+* Styling and formatting files (CSS).
+* Security certificates (SSL/TLS).
+* Environment dependency management files.
