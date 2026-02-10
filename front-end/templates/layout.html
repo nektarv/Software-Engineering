@@ -1,7 +1,4 @@
 <!-- frontend/templates/layout.html -->
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -26,7 +23,7 @@
             <div class="nav-brand">
                 <a href="{{ request.url_for('map_page') }}" class="brand-link">
                     <i class="fas fa-bolt"></i>
-                    <span class="brand-text">Our Name</span>
+                    <span class="brand-text">EV ChargeHub</span>
                 </a>
             </div>
             
@@ -57,27 +54,27 @@
             <!-- Authentication Section -->
             <div class="nav-profile">
                 {% if is_logged_in %}
-                    <!-- Logged in state -->
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <div style="display: flex; align-items: center; gap: 8px; color: #333;">
-                            <i class="fas fa-user-circle" style="color: #4CAF50; font-size: 1.2em;"></i>
-                            <div>
-                                <div style="font-weight: 500; font-size: 0.95em;">{{ username }}</div>
-                                <div style="font-size: 0.8em; color: #666;">ID: {{ userid }}</div>
+                    <!-- Logged in state - HORIZONTAL LAYOUT -->
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <!-- Avatar and username together -->
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #0aca1a, #05a813); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                                {{ (username[0] if username else 'U')|upper }}
                             </div>
+                            <span style="color: white; font-weight: 500;">{{ username }}</span>
                         </div>
+                        
+                        <!-- Logout button - NOW EXACTLY LIKE LOGIN -->
                         <form method="POST" action="/logout" style="margin: 0;">
-                            <button type="submit" 
-                                    style="background: #f8f9fa; color: #666; border: 1px solid #dee2e6;
-                                           padding: 5px 10px; border-radius: 4px; cursor: pointer;
-                                           font-size: 0.9em; transition: all 0.2s;">
-                                <i class="fas fa-sign-out-alt"></i> Logout
+                            <button type="submit" class="nav-link" style="background: none; border: 1px solid transparent;">
+                                <i class="fas fa-sign-out-alt"></i>
+                                <span class="link-text">Logout</span>
                             </button>
                         </form>
                     </div>
                 {% else %}
                     <!-- Not logged in state -->
-                    <a href="/authentication" class="nav-link">
+                    <a href="/authentication" class="nav-link login-link" style="background: none; border: 1px solid transparent;">
                         <i class="fas fa-sign-in-alt"></i>
                         <span class="link-text">Login</span>
                     </a>

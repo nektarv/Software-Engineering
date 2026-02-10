@@ -1,4 +1,4 @@
-/* frontend/static/css/style.css - UPDATED VERSION */
+/* frontend/static/css/style.css  */
 
 /* ===== RESET & BASE STYLES ===== */
 * {
@@ -17,7 +17,7 @@ body {
     flex-direction: column;
 }
 
-/* ===== NAVIGATION BAR - FIXED LAYOUT ===== */
+/* ===== NAVIGATION BAR ===== */
 .navbar {
     background: linear-gradient(135deg, #1a73e8, #0d47a1);
     color: white;
@@ -33,11 +33,11 @@ body {
     margin: 0 auto;
     padding: 0 1rem;
     display: flex;
-    justify-content: space-between; /* This pushes left and right apart */
+    justify-content: space-between;
     align-items: center;
 }
 
-/* Brand/Logo on LEFT */
+/* ===== BRAND / LOGO ===== */
 .nav-brand {
     display: flex;
     align-items: center;
@@ -62,50 +62,52 @@ body {
     font-size: 1.3rem;
 }
 
-/* Navigation Links Container */
+/* ===== NAV LINKS ===== */
 .nav-links {
     display: flex;
     align-items: center;
     gap: 1rem;
 }
 
-/* Main navigation buttons (Map, List, Stats) */
-.nav-main-links {
-    display: flex;
-    gap: 0.5rem;
-}
-
-/* Profile button on RIGHT */
-.nav-profile {
-    margin-left: 0rem;
-    padding-left: 2rem;
-    /*border-left: 1px solid rgba(255, 255, 255, 0.3);*/
-}
-
-/* Individual Link Styles */
-.nav-link {
+/* ===== UNIFIED NAV ACTION (links + buttons) ===== */
+.nav-link,
+form button.nav-link {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+
     padding: 0.75rem 1.25rem;
-    text-decoration: none;
-    color: white;
     border-radius: 25px;
-    transition: all 0.3s ease;
+
+    background: none;
+    border: 1px solid transparent;
+
+    color: white;
+    text-decoration: none;
     font-weight: 500;
-    white-space: nowrap; /* Prevents text wrapping */
+    font-size: 1rem;
+    font-family: inherit;
+
+    cursor: pointer;
+    white-space: nowrap;
+
+    transition: background-color 0.3s ease;
 }
 
-.nav-link:hover {
+/* Hover state */
+.nav-link:hover,
+form button.nav-link:hover {
     background-color: rgba(255, 255, 255, 0.15);
-    transform: translateY(-2px);
 }
 
-.nav-link.active {
+/* Active state */
+.nav-link.active,
+form button.nav-link.active {
     background-color: rgba(255, 255, 255, 0.25);
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
+/* Icons inside nav actions */
 .nav-link i {
     font-size: 1.2rem;
 }
@@ -114,6 +116,62 @@ body {
     font-size: 1rem;
 }
 
-.profile-link {
-    background-color: rgba(255, 255, 255, 0.1);
+/* ===== PROFILE / AUTH AREA ===== */
+.nav-profile {
+    padding-left: 2rem;
+}
+
+/* Hide user ID if present */
+.user-id {
+    display: none !important;
+}
+
+/* Remove default form spacing */
+form {
+    margin: 0;
+    padding: 0;
+}
+
+/* ===== MAIN CONTENT ===== */
+.main-content {
+    flex: 1;
+    max-width: 1200px;
+    width: 100%;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+/* ===== FOOTER ===== */
+.footer {
+    background: linear-gradient(135deg, #2c3e50, #1a252f);
+    color: white;
+    padding: 1.5rem 0;
+    margin-top: auto;
+}
+
+.footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.footer p {
+    margin: 0;
+}
+
+.footer-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.status-indicator {
+    color: #4caf50;
+    font-size: 0.6rem;
 }
