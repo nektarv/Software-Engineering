@@ -1,10 +1,9 @@
 # Back-end
 
-Ενδεικτικά περιεχόμενα:
+**Indicative contents:**
 
-- Πηγαίος κώδικας εφαρμογής για εισαγωγή, διαχείριση και
-  πρόσβαση σε δεδομένα (backend).
-- Database dump (sql ή json)
-- Back-end functional tests.
-- Back-end unit tests.
-- RESTful API.
+* Core RESTful API source code.
+* Administrative management modules for CLI.
+* Real-time energy pricing subsystem.
+* SSL/TLS security assets.
+* Dependencies and verification utilities.

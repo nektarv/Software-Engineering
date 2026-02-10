@@ -41,6 +41,7 @@ def get_points(
 
         sql = """
             SELECT
+                s.provider AS providerName,
                 o.outletid AS pointid,
                 s.Longitude AS lon,
                 s.Latitude AS lat,
@@ -64,7 +65,7 @@ def get_points(
             return Response(status_code=204)
 
         if format == "csv":
-            csv_text = _rows_to_csv(rows, ["pointid", "lon", "lat", "cap", "status"])
+            csv_text = _rows_to_csv(rows, ["providerName","pointid", "lon", "lat", "cap", "status"])
             return PlainTextResponse(content=csv_text, media_type="text/csv; charset=utf-8")
 
         return rows
