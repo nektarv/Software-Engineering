@@ -4,6 +4,8 @@ from fastapi.responses import JSONResponse
 import mysql.connector
 import csv, io
 
+from mysql.connector import Error as MySQLError
+
 from utils import DB_CONFIG, build_error_log
 
 
@@ -51,15 +53,32 @@ async def admin_addpoints(request: Request, file: UploadFile = File(...)):
     )
     return JSONResponse(status_code=400, content=error_body)
 
-  # read the file in bytes
-  contents = await file.read()
-  # convert bytes in text 
-  text = contents.decode("utf-8")
-  # csv reader (expects header)
-  reader = csv.DictReader(io.StringIO(text))
+  conn = None
+  cursor = None
 
+  # 2. Έλεγχος Σύνδεσης ΒΔ (400 - Η σημαντική διόρθωση)
   try:
     conn = mysql.connector.connect(**DB_CONFIG)
+  except MySQLError as err:
+      error_body = build_error_log(
+          request=request,
+          code=400,
+          error_text="Database connection failed", 
+          raw_debuginfo=str(err),
+      )
+      return JSONResponse(status_code=400, content=error_body)
+
+  
+  try:
+
+    # read the file in bytes
+    contents = await file.read()
+    # convert bytes in text 
+    text = contents.decode("utf-8")
+    # csv reader (expects header)
+    reader = csv.DictReader(io.StringIO(text))
+
+    
     cursor = conn.cursor()
 
     for row in reader:
@@ -96,6 +115,10 @@ async def admin_addpoints(request: Request, file: UploadFile = File(...)):
     conn.close()
 
   except Exception as e:
+    # Cleanup σε περίπτωση λάθους
+        if cursor: cursor.close()
+        if conn and conn.is_connected(): conn.close()
+
         error_body = build_error_log(
             request=request,
             code=500,

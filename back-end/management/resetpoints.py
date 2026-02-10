@@ -2,7 +2,7 @@ from datetime import datetime
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 import mysql.connector
-
+from mysql.connector import Error as MySQLError
 from utils import DB_CONFIG, build_error_log
 
 
@@ -18,23 +18,39 @@ router = APIRouter(tags=["management"])
 @router.post("/api/admin/resetpoints")
 def admin_resetpoints(request: Request): 
 
-  # Hardwired path - same for everyone (database directory of the project)
-  JSON_FILE = Path("management/parts1234.json")
+    # Hardwired path - same for everyone (database directory of the project)
+    JSON_FILE = Path("management/parts1234.json")
 
-  if not JSON_FILE.exists():
-      # error 400
+    if not JSON_FILE.exists():
+      # Περίπτωση μη έγκυρων παραμέτρων/αρχείου -> 400
       error_body = build_error_log(
-      request=request,
-      code=400,
-      error_text="JSON file not found", 
-      raw_debuginfo=str(JSON_FILE),
+          request=request,
+          code=400,
+          error_text="JSON file not found", 
+          raw_debuginfo=str(JSON_FILE),
       )
       return JSONResponse(status_code=400, content=error_body)
 
+    conn = None
+    cursor = None
+
+    # DB Connection Check
+    try:
+        conn = mysql.connector.connect(**DB_CONFIG)
+    except MySQLError as err:
+        
+        error_body = build_error_log(
+            request=request,
+            code=400,
+            error_text="Database connection failed", 
+            raw_debuginfo=str(err),
+        )
+        return JSONResponse(status_code=400, content=error_body)
+
   
   # DB Connection and Reset tables
-  try:
-      conn = mysql.connector.connect(**DB_CONFIG)
+    try:
+      
       cursor = conn.cursor()
 
       cursor.execute("SET FOREIGN_KEY_CHECKS = 0")
@@ -59,8 +75,17 @@ def admin_resetpoints(request: Request):
 
       cursor.close()
       conn.close()
+    
+      return JSONResponse(status_code=200, content={"status": "OK", "inserted_stations": inserted})
         
-  except Exception as e:
+    except Exception as e:
+
+      # Σε περίπτωση λάθους 500, πρέπει να κλείσουμε τη σύνδεση αν είναι ανοιχτή
+      if cursor:
+        cursor.close()
+      if conn and conn.is_connected():
+        conn.close()    
+
       error_body = build_error_log(
           request=request,
           code=500,
@@ -69,4 +94,4 @@ def admin_resetpoints(request: Request):
       )
       return JSONResponse(status_code=500, content=error_body)
 
-  return JSONResponse(status_code=200, content={"status": "OK", "inserted_stations": inserted})
+    
