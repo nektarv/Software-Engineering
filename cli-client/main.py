@@ -1,4 +1,3 @@
-
 import argparse
 import requests
 import json
@@ -9,8 +8,6 @@ from io import StringIO
 from datetime import datetime
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-# πριν τρέξω κάποιο command $ se25XX scope --param1 value1 [--param2 value2 ...] --format fff τρέχω pip install -e .
 
 def normalize_date(date_str: str) -> str:
     """
@@ -61,7 +58,7 @@ def addpoints(source):
     url = 'https://localhost:9876/api/admin/addpoints'
 
     if not os.path.exists(source):
-        print(f"To αρχείο {source} δεν βρέθηκε.")
+        print(f"The file {source} was not found.")
         sys.exit(1)
 
     with open(source, "rb") as f:
@@ -119,8 +116,12 @@ def point(point_id: int):
     url = f"https://localhost:9876/api/point/{point_id}"       
     response = requests.get(url, verify=False)
     print(response.status_code)
-    data = response.json()
-    print(json.dumps(data, ensure_ascii=False, indent=2))
+    if response.status_code == 204:
+        print("No data found")
+        return
+    else:
+        data = response.json()
+        print(json.dumps(data, ensure_ascii=False, indent=2))
 
 # -------------------------------
 #   Reserve
@@ -133,8 +134,12 @@ def reserve(point_id: int, minutes: int = None):
     
     response = requests.post(url, verify=False)
     print(response.status_code)
-    data = response.json()
-    print(json.dumps(data, ensure_ascii=False, indent=2))   
+    if response.status_code == 204:
+        print("No data found")
+        return
+    else:
+        data = response.json()
+        print(json.dumps(data, ensure_ascii=False, indent=2))   
 
 # -------------------------------
 #   Updpoint
@@ -151,8 +156,13 @@ def updpoint(point_id: int, status: str = None, price: float = None):
     
     url=f"https://localhost:9876/api/updpoint/{point_id}"
     response = requests.post(url, json=payload, verify=False)
-    data = response.json()
-    print(json.dumps(data, indent=2, ensure_ascii=False))
+    print(response.status_code)
+    if response.status_code == 204:
+        print("No data found")
+        return
+    else:
+        data = response.json()
+        print(json.dumps(data, indent=2, ensure_ascii=False))
 
 # -------------------------------
 #   Newsession
@@ -172,8 +182,12 @@ def newsession(pointid: int, starttime: str, endtime: str, startsoc: int,
     url= "https://localhost:9876/api/newsession"
     response = requests.post(url, json=payload,verify=False)
     print(response.status_code) 
-    data = response.json()
-    print(json.dumps(data, indent=2, ensure_ascii=False))
+    if response.status_code == 204:
+        print("No data found")
+        return
+    else:
+        data = response.json()
+        print(json.dumps(data, indent=2, ensure_ascii=False))
  
 # -------------------------------
 #   Sessions 
