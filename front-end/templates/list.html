@@ -2,290 +2,12 @@
 {% set active_page = "list" %}
 
 {% block head %}
-<style>
-  :root{
-    --card:#fff;
-    --muted:#6b7280;
-    --text:#111827;
-    --line:rgba(17,24,39,.08);
-    --shadow:0 8px 24px rgba(17,24,39,.08);
-    --brand:#1a73e8;
-    --brand-2:#0b5bd3;
-    --chip:#f3f4f6;
-  }
+  <!-- noUiSlider (dual-handle slider that aligns correctly) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nouislider@15.7.1/dist/nouislider.min.css">
+  
+  <!-- page css -->
+  <link rel="stylesheet" href="/static/css/list.css">
 
-  .list-page { width: 100%; max-width: 1200px; margin: 0 auto; padding: 1.25rem 1rem; }
-
-  /* ---------- FILTER BAR ---------- */
-  .filters-bar{
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    padding: .75rem .75rem;
-    display: flex;
-    align-items: center;
-    gap: .65rem;
-    flex-wrap: wrap;
-    box-shadow: var(--shadow);
-    margin-bottom: 1rem;
-    position: sticky;
-    top: .75rem;
-    z-index: 5;
-    backdrop-filter: blur(6px);
-  }
-
-  .filter-pill{
-    display:flex;
-    align-items:center;
-    gap:.55rem;
-    padding:.5rem .6rem;
-    border:1px solid var(--line);
-    border-radius: 999px;
-    background:#fff;
-    min-height: 42px;
-  }
-
-  .filter-icon{ color: var(--muted); width: 18px; text-align:center; }
-  .filter-label{ font-size:.86rem; color: var(--muted); white-space:nowrap; }
-  .filter-input, .filter-select{
-    border:0;
-    outline:0;
-    background:transparent;
-    color: var(--text);
-    font-size:.95rem;
-    min-width: 160px;
-  }
-  .filter-input::placeholder{ color: #9ca3af; }
-  .filter-select{ min-width: 140px; }
-
-  .filter-actions{
-    margin-left:auto;
-    display:flex;
-    gap:.5rem;
-    align-items:center;
-  }
-
-  .btn{
-    border: 0;
-    border-radius: 999px;
-    padding: .6rem .95rem;
-    font-weight: 700;
-    cursor:pointer;
-    transition: transform .05s ease, background .15s ease;
-    user-select:none;
-    display:inline-flex;
-    align-items:center;
-    gap:.45rem;
-    min-height: 42px;
-    text-decoration:none;
-  }
-  .btn:active{ transform: translateY(1px); }
-  .btn.primary{ background: var(--brand); color:#fff; }
-  .btn.primary:hover{ background: var(--brand-2); }
-  .btn.ghost{ background:#eef2ff; color: #1a73e8; }
-  .btn.ghost:hover{ background:#e6ecff; }
-
-  .toggle{
-    display:flex; align-items:center; gap:.45rem;
-    padding:.45rem .6rem;
-    border:1px solid var(--line);
-    border-radius:999px;
-    background:#fff;
-    min-height: 42px;
-    cursor:pointer;
-    color: var(--text);
-  }
-  .toggle input{ transform: translateY(1px); }
-
-  /* ---------- RANGE (dual slider) ---------- */
-  .range-wrap{
-    display:flex;
-    align-items:center;
-    gap:.55rem;
-    min-width: 340px;
-  }
-  .range-values{
-    font-size:.9rem;
-    color: var(--text);
-    white-space:nowrap;
-    min-width: 120px;
-    text-align:right;
-  }
-  .range{
-    position: relative;
-    width: 220px;
-    height: 30px;
-    display:flex;
-    align-items:center;
-  }
-  .range input[type="range"]{
-    position:absolute;
-    left:0; right:0;
-    width:100%;
-    pointer-events:none; /* we enable per-thumb below */
-    -webkit-appearance:none;
-    background:transparent;
-    margin:0;
-  }
-  .range input[type="range"]::-webkit-slider-thumb{
-    -webkit-appearance:none;
-    width:16px; height:16px;
-    border-radius:999px;
-    background: var(--brand);
-    border: 2px solid #fff;
-    box-shadow: 0 4px 10px rgba(26,115,232,.35);
-    pointer-events:auto;
-    cursor:pointer;
-  }
-  .range input[type="range"]::-webkit-slider-runnable-track{
-    height:6px;
-    border-radius:999px;
-    background: #e5e7eb;
-  }
-  .range .range-fill{
-    position:absolute;
-    height:6px;
-    border-radius:999px;
-    background: rgba(26,115,232,.35);
-    left: 0%;
-    right: 0%;
-    pointer-events:none;
-  }
-
-  .mini{
-    font-size:.82rem;
-    color: var(--muted);
-    border-left:1px solid var(--line);
-    padding-left:.6rem;
-  }
-
-  /* ---------- RESULTS / CARDS ---------- */
-  .results{ display:flex; flex-direction:column; gap:.75rem; }
-
-  .charger-card{
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    padding: 1rem 1rem;
-    box-shadow: var(--shadow);
-    display:grid;
-    grid-template-columns: 1.7fr .9fr auto;
-    gap: .9rem;
-    align-items: center;
-  }
-
-  .charger-main{ min-width: 0; }
-  .charger-title{
-    font-weight: 800;
-    font-size: 1.02rem;
-    color: var(--text);
-    display:flex;
-    gap:.5rem;
-    align-items: baseline;
-    flex-wrap: wrap;
-  }
-  .charger-sub{
-    margin-top:.15rem;
-    color: var(--muted);
-    font-size:.92rem;
-    overflow:hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .chips{
-    display:flex;
-    gap:.5rem;
-    flex-wrap: wrap;
-    align-items:center;
-    justify-content:flex-start;
-  }
-  .chip{
-    display:inline-flex;
-    align-items:center;
-    gap:.35rem;
-    padding:.35rem .6rem;
-    border-radius:999px;
-    background: var(--chip);
-    color: #111827;
-    font-size:.88rem;
-    border:1px solid var(--line);
-    white-space: nowrap;
-  }
-  .chip i{ color: var(--muted); }
-
-  .charger-actions{
-    display:flex;
-    gap:.4rem;
-    justify-content:flex-end;
-    align-items:center;
-  }
-
-  .star-btn{
-    width: 42px; height: 42px;
-    border-radius: 999px;
-    border: 1px solid var(--line);
-    background: #fff;
-    cursor:pointer;
-    font-size: 1.2rem;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    transition: background .15s ease, transform .05s ease;
-  }
-  .star-btn:hover{ background:#f9fafb; }
-  .star-btn:active{ transform: translateY(1px); }
-  .star-btn.on{ background:#fff7ed; border-color: rgba(234,88,12,.25); }
-
-  .map-link{
-    display:inline-flex;
-    align-items:center;
-    gap:.45rem;
-    padding: .55rem .75rem;
-    border-radius: 999px;
-    border: 1px solid var(--line);
-    background:#fff;
-    color: var(--text);
-    text-decoration:none;
-    font-weight: 700;
-    min-height: 42px;
-  }
-  .map-link:hover{ background:#f9fafb; }
-  .map-disabled{
-    padding:.55rem .75rem;
-    border-radius:999px;
-    border: 1px dashed rgba(107,114,128,.35);
-    color: var(--muted);
-    font-weight: 600;
-    min-height: 42px;
-    display:inline-flex;
-    align-items:center;
-    gap:.45rem;
-  }
-
-  .notice{
-    background: #fff7e6;
-    border: 1px solid #ffe0a6;
-    padding: 0.75rem 1rem;
-    border-radius: 12px;
-    color:#6b4e16;
-    margin-bottom: 1rem;
-    white-space: pre-wrap;
-  }
-  .muted { color: var(--muted); font-size: 0.92rem; }
-
-  /* ---------- Responsive ---------- */
-  @media (max-width: 980px){
-    .filter-actions{ width:100%; margin-left:0; justify-content:flex-end; }
-    .range-wrap{ min-width: 100%; justify-content:space-between; }
-    .range{ width: 100%; max-width: 360px; }
-  }
-  @media (max-width: 760px){
-    .charger-card{ grid-template-columns: 1fr; }
-    .charger-actions{ justify-content:flex-start; }
-    .charger-sub{ white-space: normal; }
-  }
-</style>
 {% endblock %}
 
 {% block content %}
@@ -300,39 +22,32 @@
     </div>
   {% endif %}
 
-  <!-- Filters -->
   <form class="filters-bar" method="get" action="/list" id="filtersForm">
     <div class="filter-pill" title="Filters">
       <span class="filter-icon"><i class="fa-solid fa-filter"></i></span>
       <span class="filter-label">Filters</span>
     </div>
 
-    <!-- PRICE RANGE (sliders -> hidden number inputs submitted) -->
-    <div class="filter-pill" style="flex:1 1 420px;">
+    <!-- PRICE (noUiSlider) -->
+    <div class="filter-pill filter-pill-wide">
       <span class="filter-icon"><i class="fa-solid fa-euro-sign"></i></span>
       <span class="filter-label">Price</span>
 
-      <div class="range-wrap">
-        <div class="range" data-range="price">
-          <div class="range-fill"></div>
-          <!-- slider values are “display range”, change these mins/maxes to what makes sense -->
-          <input type="range" id="priceMin" min="0" max="0.4" step="0.0001">
-          <input type="range" id="priceMax" min="0" max="0.4" step="0.0001">
-        </div>
-
-        <div class="range-values">
+      <div class="slider-wrap">
+        <div id="priceSlider" class="noui"></div>
+        <div class="slider-values">
           <span id="priceMinLbl">–</span> – <span id="priceMaxLbl">–</span>
           <span class="mini">€/kWh</span>
         </div>
       </div>
 
-      <!-- hidden inputs that backend expects -->
+      <!-- backend expects these -->
       <input type="hidden" name="min_price" id="min_price" value="{{ filters.min_price }}">
       <input type="hidden" name="max_price" id="max_price" value="{{ filters.max_price }}">
     </div>
 
     <!-- LOCATION -->
-    <div class="filter-pill" style="flex:1 1 320px;">
+    <div class="filter-pill filter-pill-location">
       <span class="filter-icon"><i class="fa-solid fa-location-dot"></i></span>
       <input name="location_q" class="filter-input" type="text" placeholder="Search name/address" value="{{ filters.location_q }}">
     </div>
@@ -348,19 +63,14 @@
       </select>
     </div>
 
-    <!-- POWER RANGE -->
-    <div class="filter-pill" style="flex:1 1 420px;">
+    <!-- POWER (noUiSlider) -->
+    <div class="filter-pill filter-pill-wide">
       <span class="filter-icon"><i class="fa-solid fa-bolt"></i></span>
       <span class="filter-label">Power</span>
 
-      <div class="range-wrap">
-        <div class="range" data-range="power">
-          <div class="range-fill"></div>
-          <input type="range" id="powerMin" min="0" max="350" step="1">
-          <input type="range" id="powerMax" min="0" max="350" step="1">
-        </div>
-
-        <div class="range-values">
+      <div class="slider-wrap">
+        <div id="powerSlider" class="noui"></div>
+        <div class="slider-values">
           <span id="powerMinLbl">–</span> – <span id="powerMaxLbl">–</span>
           <span class="mini">kW</span>
         </div>
@@ -370,10 +80,10 @@
       <input type="hidden" name="max_power" id="max_power" value="{{ filters.max_power }}">
     </div>
 
-    <!-- TIME (calendar style) -->
+    <!-- TIME -->
     <div class="filter-pill">
       <span class="filter-icon"><i class="fa-regular fa-calendar"></i></span>
-      <input class="filter-input" type="datetime-local" id="timePicker">
+      <input class="filter-input time-input" type="datetime-local" id="timePicker" step="3600">
       <input type="hidden" name="price_time" id="price_time" value="{{ filters.price_time }}">
     </div>
 
@@ -381,7 +91,7 @@
     <label class="toggle" title="Show favourites only">
       <input type="checkbox" name="favourites_only" value="1" {% if filters.favourites_only == 1 %}checked{% endif %}>
       <i class="fa-regular fa-star" style="color:var(--muted)"></i>
-      <span style="font-weight:700;">Favourites</span>
+      <span>Favourites</span>
     </label>
 
     <div class="filter-actions">
@@ -451,115 +161,9 @@
   </div>
 </div>
 
-<script>
-  // -------- Helpers
-  function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
+<!-- noUiSlider JS -->
+<script src="https://cdn.jsdelivr.net/npm/nouislider@15.7.1/dist/nouislider.min.js"></script>
 
-  // -------- Dual range setup
-  function setupDualRange({ minEl, maxEl, fillEl, minLbl, maxLbl, hiddenMin, hiddenMax, parse, format }) {
-    const minInput = document.getElementById(minEl);
-    const maxInput = document.getElementById(maxEl);
-    const fill = document.querySelector(fillEl);
-    const minLabel = document.getElementById(minLbl);
-    const maxLabel = document.getElementById(maxLbl);
-    const hiddenMinEl = document.getElementById(hiddenMin);
-    const hiddenMaxEl = document.getElementById(hiddenMax);
-
-    // read current filters from hidden inputs (your backend values)
-    const existingMin = parse(hiddenMinEl.value);
-    const existingMax = parse(hiddenMaxEl.value);
-
-    // defaults: if empty -> full span
-    const absMin = parseFloat(minInput.min);
-    const absMax = parseFloat(minInput.max);
-
-    minInput.value = Number.isFinite(existingMin) ? clamp(existingMin, absMin, absMax) : absMin;
-    maxInput.value = Number.isFinite(existingMax) ? clamp(existingMax, absMin, absMax) : absMax;
-
-    function paint(){
-      let a = parseFloat(minInput.value);
-      let b = parseFloat(maxInput.value);
-
-      // keep order
-      if (a > b) { const t = a; a = b; b = t; }
-
-      minInput.value = a;
-      maxInput.value = b;
-
-      // labels
-      minLabel.textContent = format(a);
-      maxLabel.textContent = format(b);
-
-      // hidden values: submit empty when user selects full range
-      hiddenMinEl.value = (a === absMin) ? "" : String(a);
-      hiddenMaxEl.value = (b === absMax) ? "" : String(b);
-
-      // fill bar
-      const leftPct = ((a - absMin) / (absMax - absMin)) * 100;
-      const rightPct = 100 - ((b - absMin) / (absMax - absMin)) * 100;
-      fill.style.left = leftPct + "%";
-      fill.style.right = rightPct + "%";
-    }
-
-    minInput.addEventListener("input", paint);
-    maxInput.addEventListener("input", paint);
-    paint();
-  }
-
-  // Price dual-range
-  setupDualRange({
-    minEl: "priceMin",
-    maxEl: "priceMax",
-    fillEl: '.range[data-range="price"] .range-fill',
-    minLbl: "priceMinLbl",
-    maxLbl: "priceMaxLbl",
-    hiddenMin: "min_price",
-    hiddenMax: "max_price",
-    parse: (v) => v === "" ? NaN : parseFloat(v),
-    format: (n) => Number(n).toFixed(4)
-  });
-
-  // Power dual-range
-  setupDualRange({
-    minEl: "powerMin",
-    maxEl: "powerMax",
-    fillEl: '.range[data-range="power"] .range-fill',
-    minLbl: "powerMinLbl",
-    maxLbl: "powerMaxLbl",
-    hiddenMin: "min_power",
-    hiddenMax: "max_power",
-    parse: (v) => v === "" ? NaN : parseInt(v, 10),
-    format: (n) => String(Math.round(n))
-  });
-
-  // -------- Time picker: datetime-local <-> YYYYMMDDHH
-  const timePicker = document.getElementById("timePicker");
-  const priceTimeHidden = document.getElementById("price_time");
-
-  function yyyymmddhh_to_datetimeLocal(s){
-    if (!s || s.length < 10) return "";
-    const yyyy = s.slice(0,4);
-    const mm = s.slice(4,6);
-    const dd = s.slice(6,8);
-    const hh = s.slice(8,10);
-    return `${yyyy}-${mm}-${dd}T${hh}:00`;
-  }
-  function datetimeLocal_to_yyyymmddhh(val){
-    if (!val) return "";
-    // val format: YYYY-MM-DDTHH:MM
-    const yyyy = val.slice(0,4);
-    const mm = val.slice(5,7);
-    const dd = val.slice(8,10);
-    const hh = val.slice(11,13);
-    return `${yyyy}${mm}${dd}${hh}`;
-  }
-
-  // initialize from backend value
-  timePicker.value = yyyymmddhh_to_datetimeLocal(priceTimeHidden.value);
-
-  // update hidden on change
-  timePicker.addEventListener("change", () => {
-    priceTimeHidden.value = datetimeLocal_to_yyyymmddhh(timePicker.value);
-  });
-</script>
+<!-- page JS -->
+<script src="/static/js/list.js"></script>
 {% endblock %}

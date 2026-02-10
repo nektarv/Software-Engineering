@@ -1,0 +1,376 @@
+:root{
+  --card:#fff;
+  --muted:#6b7280;
+  --text:#111827;
+  --line:rgba(17,24,39,.08);
+  --shadow:0 8px 24px rgba(17,24,39,.08);
+  --brand:#1a73e8;
+  --brand-2:#0b5bd3;
+  --chip:#f3f4f6;
+}
+
+/* ---------- noUiSlider (compact theme) ---------- */
+.slider-wrap{
+  display:flex;
+  align-items:center;
+  gap:.4rem;
+  min-width: 240px;
+}
+
+.noui{
+  width: 160px;              /* smaller */
+}
+
+/* bar */
+.noUi-target{
+  border: 0;
+  box-shadow: none;
+  background: #e5e7eb;
+  border-radius: 999px;
+  height: 1px;               /* thinner */
+}
+
+/* selected range */
+.noUi-connect{
+  background: rgba(26,115,232,.45);
+}
+
+/* handles */
+/* ===== Tiny visible knobs, comfortable hit area ===== */
+
+/* Keep a decent hit area so it's easy to grab */
+.noUi-handle{
+  width: 18px !important;
+  height: 18px !important;
+  right: -9px !important;
+  top: -7.5px !important;          /* center on a 3px bar: -(18-3)/2 = -7.5 */
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Draw the actual small circular knob */
+.noUi-handle::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:50%;
+  width: 8px;                      /* <-- knob size (change to 6px if you want) */
+  height: 8px;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  background: var(--brand);
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(26,115,232,.30);
+}
+
+/* Remove any default decorations */
+.noUi-handle:before,
+.noUi-handle:after{
+  display:none !important;
+}
+
+/* prevent the big white boxes around handles */
+.noUi-touch-area{
+  border-radius: 999px;
+}
+
+/* make the slider not add extra vertical padding */
+.noUi-horizontal{
+  height: 5px;
+}
+
+/* values text */
+.slider-values{
+  font-size: .84rem;
+  color: var(--text);
+  white-space: nowrap;
+  min-width: 150px;
+}
+
+.mini{
+  font-size:.75rem;
+  color: var(--muted);
+  border-left:1px solid var(--line);
+  padding-left:.45rem;
+  margin-left:.25rem;
+}
+
+/* On small screens give it room */
+@media (max-width: 980px){
+  .slider-wrap{ min-width: 100%; justify-content: space-between; }
+  .noui{ width: min(280px, 100%); }
+}
+
+
+/* selected range */
+.noUi-connect{
+  background: rgba(26,115,232,.35);
+}
+
+/* handles */
+.noUi-handle{
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  right: -8px;
+  top: -5px; /* centers handle on 6px bar */
+  border: 2px solid #fff;
+  box-shadow: 0 4px 10px rgba(26,115,232,.35);
+  background: var(--brand);
+}
+.noUi-handle:before,
+.noUi-handle:after{ display:none; }
+
+.slider-values{
+  font-size:.9rem;
+  color: var(--text);
+  white-space: nowrap;
+  min-width: 160px;
+}
+.mini{
+  font-size:.82rem;
+  color: var(--muted);
+  border-left:1px solid var(--line);
+  padding-left:.6rem;
+  margin-left:.35rem;
+}
+
+
+.list-page { width: 100%; max-width: 1200px; margin: 0 auto; padding: 1.25rem 1rem; }
+
+/* ---------- FILTER BAR ---------- */
+.filters-bar{
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: .75rem .75rem;
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  flex-wrap: wrap;
+  box-shadow: var(--shadow);
+  margin-bottom: 1rem;
+  position: sticky;
+  top: .75rem;
+  z-index: 5;
+  backdrop-filter: blur(6px);
+}
+
+.filter-pill{
+  display:flex;
+  align-items:center;
+  gap:.55rem;
+  padding:.5rem .6rem;
+  border:1px solid var(--line);
+  border-radius: 999px;
+  background:#fff;
+  min-height: 42px;
+}
+
+.filter-pill-wide{
+  flex: 1 1 420px;
+}
+
+.filter-pill-location{
+  flex: 1 1 320px;
+}
+
+.filter-icon{ color: var(--muted); width: 18px; text-align:center; }
+.filter-label{ font-size:.86rem; color: var(--muted); white-space:nowrap; }
+
+.filter-input, .filter-select{
+  border:0;
+  outline:0;
+  background:transparent;
+  color: var(--text);
+  font-size:.95rem;
+  min-width: 160px;
+}
+.filter-input::placeholder{ color: #9ca3af; }
+.filter-select{ min-width: 140px; }
+
+.time-input{ min-width: 190px; }
+
+.filter-actions{
+  margin-left:auto;
+  display:flex;
+  gap:.5rem;
+  align-items:center;
+}
+
+.btn{
+  border: 0;
+  border-radius: 999px;
+  padding: .6rem .95rem;
+  font-weight: 800;
+  cursor:pointer;
+  transition: transform .05s ease, background .15s ease;
+  user-select:none;
+  display:inline-flex;
+  align-items:center;
+  gap:.45rem;
+  min-height: 42px;
+  text-decoration:none;
+}
+.btn:active{ transform: translateY(1px); }
+.btn.primary{ background: var(--brand); color:#fff; }
+.btn.primary:hover{ background: var(--brand-2); }
+.btn.ghost{ background:#eef2ff; color: #1a73e8; }
+.btn.ghost:hover{ background:#e6ecff; }
+
+.toggle{
+  display:flex; align-items:center; gap:.45rem;
+  padding:.45rem .6rem;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:#fff;
+  min-height: 42px;
+  cursor:pointer;
+  color: var(--text);
+  font-weight: 800;
+}
+.toggle input{ transform: translateY(1px); }
+
+
+/* ---------- RESULTS / CARDS ---------- */
+.results{ display:flex; flex-direction:column; gap:.75rem; }
+
+.charger-card{
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 1rem 1rem;
+  box-shadow: var(--shadow);
+  display:grid;
+  grid-template-columns: 1.7fr .9fr auto;
+  gap: .9rem;
+  align-items: center;
+}
+
+.charger-main{ min-width: 0; }
+.charger-title{
+  font-weight: 900;
+  font-size: 1.02rem;
+  color: var(--text);
+  display:flex;
+  gap:.5rem;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+.charger-sub{
+  margin-top:.15rem;
+  color: var(--muted);
+  font-size:.92rem;
+  overflow:hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chips{
+  display:flex;
+  gap:.5rem;
+  flex-wrap: wrap;
+  align-items:center;
+  justify-content:flex-start;
+}
+.chip{
+  display:inline-flex;
+  align-items:center;
+  gap:.35rem;
+  padding:.35rem .6rem;
+  border-radius:999px;
+  background: var(--chip);
+  color: #111827;
+  font-size:.88rem;
+  border:1px solid var(--line);
+  white-space: nowrap;
+}
+.chip i{ color: var(--muted); }
+
+.charger-actions{
+  display:flex;
+  gap:.4rem;
+  justify-content:flex-end;
+  align-items:center;
+}
+
+/* ---------- Favourite star ---------- */
+.star-btn{
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+
+  font-size: 1.35rem;
+  line-height: 1;
+  color: #9ca3af;                 /* gray when not favourite */
+  transition: transform .12s ease, color .15s ease;
+}
+
+/* hover: hint that it’s clickable */
+.star-btn:hover{
+  color: #facc15;                 /* yellow */
+  transform: scale(1.15);
+}
+
+/* active (favourite) */
+.star-btn.on{
+  color: #facc15;                 /* solid yellow */
+}
+
+/* click feedback */
+.star-btn:active{
+  transform: scale(0.95);
+}
+
+
+.map-link{
+  display:inline-flex;
+  align-items:center;
+  gap:.45rem;
+  padding: .55rem .75rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background:#fff;
+  color: var(--text);
+  text-decoration:none;
+  font-weight: 800;
+  min-height: 42px;
+}
+.map-link:hover{ background:#f9fafb; }
+
+.map-disabled{
+  padding:.55rem .75rem;
+  border-radius:999px;
+  border: 1px dashed rgba(107,114,128,.35);
+  color: var(--muted);
+  font-weight: 800;
+  min-height: 42px;
+  display:inline-flex;
+  align-items:center;
+  gap:.45rem;
+}
+
+.notice{
+  background: #fff7e6;
+  border: 1px solid #ffe0a6;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  color:#6b4e16;
+  margin-bottom: 1rem;
+  white-space: pre-wrap;
+}
+.muted { color: var(--muted); font-size: 0.92rem; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 980px){
+  .filter-actions{ width:100%; margin-left:0; justify-content:flex-end; }
+  .slider-wrap{ min-width: 100%; justify-content:space-between; }
+  .noui{ width: min(360px, 100%); }
+}
+@media (max-width: 760px){
+  .charger-card{ grid-template-columns: 1fr; }
+  .charger-actions{ justify-content:flex-start; }
+  .charger-sub{ white-space: normal; }
+}
