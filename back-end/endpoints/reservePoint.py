@@ -42,10 +42,10 @@ async def reserve(request: Request, point_id: int, minutes: int):
         # check if point exists
         if not point:
             error = build_error_log(
-                request, 404, "Not found",
+                request, 204, "Not found",
                 f"Charging point {point_id} does not exist"
             )
-            return JSONResponse(status_code=404, content=error)
+            return JSONResponse(status_code=204, content=error)
 
         status = point['state']
         # check for valid status
@@ -166,8 +166,8 @@ async def reserve_custom(
         point = cursor.fetchone()
 
         if not point:
-            error = build_error_log(request, 404, "Not found", f"Charging point {point_id} does not exist")
-            return JSONResponse(status_code=404, content=error)
+            error = build_error_log(request, 204, "Not found", f"Charging point {point_id} does not exist")
+            return JSONResponse(status_code=204, content=error)
 
         status = point['state']
 

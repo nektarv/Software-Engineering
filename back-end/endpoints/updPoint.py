@@ -29,13 +29,13 @@ async def update_point(
         cursor.execute("SELECT * FROM outlet WHERE outletid = %s", (point_id,))
         point = cursor.fetchone()
         
-        # if point doesn't exist, return 404
+        # if point doesn't exist, return 204
         if not point:
             error = build_error_log(
-                request, 404, "Not found",
+                request, 204, "Not found",
                 f"Charging point {point_id} does not exist"
             )
-            return JSONResponse(status_code=404, content=error)
+            return JSONResponse(status_code=204, content=error)
         
         # at least one field must be provided
         if update_data.status is None and update_data.kwhprice is None:
