@@ -4,6 +4,10 @@ from datetime import datetime, date, timedelta, timezone
 from zoneinfo import ZoneInfo
 import csv
 from pathlib import Path
+import os                      
+from dotenv import load_dotenv  
+
+load_dotenv()                   
 
 # Settings
 EIC_GR = "10YGR-HTSO-----Y"
@@ -11,7 +15,7 @@ BASE_URL = "https://web-api.tp.entsoe.eu/api"
 TZ_ATHENS = ZoneInfo("Europe/Athens")
 
 # --- TOKEN HERE ---
-SECURITY_TOKEN = "4f9a7ed3-fcbd-472d-bbd2-aea633f9f939" 
+SECURITY_TOKEN = os.getenv("ENTSOE_TOKEN") 
 
 def build_url(token, start_utc, end_utc):
     fmt = "%Y%m%d%H%M"
