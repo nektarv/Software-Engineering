@@ -105,7 +105,6 @@ def main():
     final_data.sort(key=lambda x: x[0])
     final_data = aggregate_to_hourly(final_data)
 
-
     if not final_data:
         print("No data found for target date.")
         return
