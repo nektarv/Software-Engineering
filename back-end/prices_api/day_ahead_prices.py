@@ -66,6 +66,22 @@ def parse_data(xml_text):
 
     return results
 
+def aggregate_to_hourly(points):
+    """
+    points: list of (datetime_athens, price_kwh) possibly at 15-min.
+    returns: list of (datetime_athens_hour, price_kwh_hour)
+    """
+    buckets = {}
+    for dt, price in points:
+        hour_dt = dt.replace(minute=0, second=0, microsecond=0)
+        buckets.setdefault(hour_dt, []).append(price)
+    hourly = []
+    for h in sorted(buckets.keys()):
+        vals = buckets[h]
+        hourly.append((h, sum(vals) / len(vals)))  # average
+    return hourly
+
+
 def main():
     if not SECURITY_TOKEN:
         print("Error: Token is missing.")
@@ -87,6 +103,8 @@ def main():
     # Filter for the Greek 24-hour period
     final_data = [x for x in all_data if start_local <= x[0] < end_local]
     final_data.sort(key=lambda x: x[0])
+    final_data = aggregate_to_hourly(final_data)
+
 
     if not final_data:
         print("No data found for target date.")
