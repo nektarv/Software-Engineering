@@ -444,6 +444,15 @@ document.getElementById('confirmReserveBtn').addEventListener('click', async fun
 
                 // Κλείνουμε το modal
                 closeModal();
+
+                const sb = document.getElementById("charger-sidebar");
+                if (sb) sb.dataset.seeOnlyFiltered = "false";
+
+                if (chargerToUpdate) {
+                    showChargerDetails(chargerToUpdate);
+                }else{
+                    alert("Reservation succeeded, but details didn’t refresh.");   
+                }
                 
                 // Κλείνουμε το panel λεπτομερειών για να αναγκάσουμε τον χρήστη 
                 // να ξαναπατήσει και να δει τα νέα δεδομένα (προαιρετικό)
