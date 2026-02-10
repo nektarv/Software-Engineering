@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 import mysql.connector
 from utils import DB_CONFIG, build_error_log
 
-router = APIRouter(prefix="/api", tags=["functional"])
+router = APIRouter(prefix="/api", tags=["favorites"])
 
 @router.post("/favourites/{userid}/{stationid}")
 def add_favourite(

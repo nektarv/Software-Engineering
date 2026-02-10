@@ -4,6 +4,10 @@ from datetime import datetime, date, timedelta, timezone
 from zoneinfo import ZoneInfo
 import csv
 from pathlib import Path
+import os                      
+from dotenv import load_dotenv  
+
+load_dotenv()                   
 
 # Settings
 EIC_GR = "10YGR-HTSO-----Y"
@@ -11,7 +15,7 @@ BASE_URL = "https://web-api.tp.entsoe.eu/api"
 TZ_ATHENS = ZoneInfo("Europe/Athens")
 
 # --- TOKEN HERE ---
-SECURITY_TOKEN = "4f9a7ed3-fcbd-472d-bbd2-aea633f9f939" 
+SECURITY_TOKEN = os.getenv("ENTSOE_TOKEN") 
 
 def build_url(token, start_utc, end_utc):
     fmt = "%Y%m%d%H%M"
@@ -66,6 +70,22 @@ def parse_data(xml_text):
 
     return results
 
+def aggregate_to_hourly(points):
+    """
+    points: list of (datetime_athens, price_kwh) possibly at 15-min.
+    returns: list of (datetime_athens_hour, price_kwh_hour)
+    """
+    buckets = {}
+    for dt, price in points:
+        hour_dt = dt.replace(minute=0, second=0, microsecond=0)
+        buckets.setdefault(hour_dt, []).append(price)
+    hourly = []
+    for h in sorted(buckets.keys()):
+        vals = buckets[h]
+        hourly.append((h, sum(vals) / len(vals)))  # average
+    return hourly
+
+
 def main():
     if not SECURITY_TOKEN:
         print("Error: Token is missing.")
@@ -87,6 +107,7 @@ def main():
     # Filter for the Greek 24-hour period
     final_data = [x for x in all_data if start_local <= x[0] < end_local]
     final_data.sort(key=lambda x: x[0])
+    final_data = aggregate_to_hourly(final_data)
 
     if not final_data:
         print("No data found for target date.")

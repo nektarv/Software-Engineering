@@ -6,7 +6,7 @@ from typing import Optional
 
 from utils import DB_CONFIG, build_error_log
 
-router = APIRouter(prefix="/api", tags=["functional"])
+router = APIRouter(prefix="/api", tags=["points"])
 
 ALLOWED_STATUSES = {"available", "charging", "reserved", "malfunction", "offline"}
 
