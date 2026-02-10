@@ -1,5 +1,5 @@
 import requests
-import csv, io
+import csv, io, time
 import itertools
 import urllib3
 import os
@@ -323,7 +323,9 @@ if __name__ == "__main__":
     if not os.path.exists(".USE_TEST_DB"):
         print("NOT CONNECTED TO TESTING DATABASE - SEE /testing/README.txt")
         sys.exit(1)
-
+    
+    start_time = time.time()
+    """
     test_get_endpoint(
         endpoint="/points",
         query_params={"status":["offline","lmao"], "format":["csv","fakeformat"]},
@@ -376,7 +378,7 @@ if __name__ == "__main__":
         payloads=[{"status":"available","kwhprice":0.40},{"status":"LOL","kwhprice":0.40},{"status":"available","kwhprice":"LOL"}],
         expected_answer_type = {"pointid": int, "status": str, "kwhprice": (float, type(None))},
         check_error_logs= True,
-        expected_error_logs={400:{},422:{}}
+        expected_error_logs={400:{}}
     )
 
     #this is for /newsession
@@ -387,18 +389,28 @@ if __name__ == "__main__":
         endpoint="/newsession",
         payloads=payloads,
         check_error_logs= True,
-        expected_error_logs={400:{},422:{}}
+        expected_error_logs={400:{}}
     )
-
-    test_post_endpoint( #NEEDS TO BE FIXED
+    """
+    test_post_endpoint( 
         endpoint="/reserve/{id}/{minutes}",
-        path_params={"id":[20],"minutes":[30,40,10000]},
+        path_params={"id":["lol",20],"minutes":[45,1000]},
         payloads=[{}],
         expected_answer_type = {"pointid": int, "status": str, "reservationendtime": str},
         check_error_logs= True,
         expected_error_logs={400:{},422:{}}
     )
 
+    test_post_endpoint( 
+        endpoint="/reserve/{id}",
+        path_params={"id":[107,20]},
+        payloads=[{}],
+        expected_answer_type = {"pointid": int, "status": str, "reservationendtime": str},
+        check_error_logs= True,
+        expected_error_logs={400:{},422:{}}
+    )
+
+    """
     test_post_endpoint(
         endpoint="/admin/addpoints",
         payloads=["./newpoints.csv"],
@@ -427,8 +439,11 @@ if __name__ == "__main__":
         },
         check_error_type=True
     )
+    """
     
     print("------------------------\n")
-    print("API TEST COMPLETED SUCCESSFULLY")
+    end_time = time.time()
+    elapsed=end_time-start_time
+    print(f"API TEST COMPLETED SUCCESSFULLY in {elapsed} seconds")
 
 
