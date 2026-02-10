@@ -87,3 +87,230 @@
     {% block scripts %}{% endblock %}
 </body>
 </html>
+
+
+{% if warning %}
+  <div class="notice">
+    {{ warning }}
+    <div style="margin-top:0.5rem;">
+      <a href="{{ request.url_for('login_page') }}">Go to Login</a>
+    </div>
+  </div>
+{% endif %}
+
+
+{% block head %}
+<style>
+  .list-page { width: 100%; max-width: 1200px; margin: 0 auto; padding: 1.25rem 1rem; }
+  .filters-bar {
+    background: white;
+    border-radius: 12px;
+    padding: 0.75rem;
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    align-items: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    margin-bottom: 1rem;
+  }
+  .filter-group { display:flex; align-items:center; gap:0.5rem; }
+  .filter-label { font-size: 0.9rem; color:#444; white-space: nowrap; }
+  .filter-input, .filter-select {
+    padding: 0.45rem 0.6rem;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    background: #fff;
+    min-width: 120px;
+  }
+  .filter-small { min-width: 90px; width: 90px; }
+  .filter-btn {
+    padding: 0.55rem 0.9rem;
+    border: none;
+    border-radius: 999px;
+    background: #1a73e8;
+    color: white;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .filter-btn.secondary { background: #e9eefc; color: #1a73e8; }
+  .results { display:flex; flex-direction: column; gap: 0.75rem; }
+  .charger-row {
+    background: white;
+    border-radius: 12px;
+    padding: 0.85rem 1rem;
+    display: grid;
+    grid-template-columns: 2.2fr 1fr 1fr 1fr auto;
+    gap: 0.75rem;
+    align-items: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    border: 1px solid rgba(0,0,0,0.04);
+  }
+  .charger-title { font-weight: 700; }
+  .charger-sub { font-size: 0.9rem; color:#666; }
+  .badge {
+    display:inline-flex;
+    align-items:center;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    background: #f1f3f4;
+    color:#333;
+  }
+  .notice {
+    background: #fff7e6;
+    border: 1px solid #ffe0a6;
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    color:#6b4e16;
+    margin-bottom: 1rem;
+    white-space: pre-wrap;
+  }
+  .star-form { margin: 0; }
+  .star-btn {
+    border: none;
+    background: transparent;
+    font-size: 1.3rem;
+    cursor: pointer;
+  }
+  .muted { color:#777; font-size: 0.92rem; }
+
+
+  @media (max-width: 900px) {
+    .charger-row { grid-template-columns: 2fr 1fr 1fr auto; }
+    .hide-sm { display:none; }
+  }
+  @media (max-width: 650px) {
+    .charger-row { grid-template-columns: 1fr auto; row-gap: 0.5rem; }
+    .charger-row > div:nth-child(2),
+    .charger-row > div:nth-child(3),
+    .charger-row > div:nth-child(4) { grid-column: 1 / -1; }
+  }
+</style>
+{% endblock %}
+
+
+
+{% block content %}
+<div class="list-page">
+
+
+  {% if api_error %}
+    <div class="notice">
+      {{ api_error }}
+      {% if api_error_details %}
+        {{ api_error_details }}
+      {% endif %}
+    </div>
+  {% endif %}
+
+
+  <form class="filters-bar" method="get" action="/list">
+    <div class="filter-group">
+      <span class="filter-label"><i class="fa-solid fa-filter"></i> Filters</span>
+    </div>
+
+
+    <div class="filter-group">
+      <span class="filter-label">Price €/kWh</span>
+      <input name="min_price" class="filter-input filter-small" type="number" step="0.0001" placeholder="Min" value="{{ filters.min_price }}">
+      <input name="max_price" class="filter-input filter-small" type="number" step="0.0001" placeholder="Max" value="{{ filters.max_price }}">
+    </div>
+
+
+    <div class="filter-group">
+      <span class="filter-label"><i class="fa-solid fa-location-dot"></i> Location</span>
+      <input name="location_q" class="filter-input" type="text" placeholder="Search name/address" value="{{ filters.location_q }}">
+    </div>
+
+
+    
+    <div class="filter-group">
+      <span class="filter-label">Connector</span>
+      <select name="connector" class="filter-select">
+        <option value="">Any</option>
+        {% for conn in available_connectors %}
+          <option value="{{ conn }}" {% if filters.connector == conn %}selected{% endif %}>{{ conn }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+
+    <div class="filter-group">
+      <span class="filter-label">Charge rate (kW)</span>
+      <input name="min_power" class="filter-input filter-small" type="number" step="1" placeholder="Min" value="{{ filters.min_power }}">
+      <input name="max_power" class="filter-input filter-small" type="number" step="1" placeholder="Max" value="{{ filters.max_power }}">
+    </div>
+
+
+    <div class="filter-group">
+      <span class="filter-label"><i class="fa-regular fa-clock"></i> Time</span>
+      <input name="price_time" class="filter-input" type="text" placeholder="YYYYMMDDHH (blank=current)" value="{{ filters.price_time }}">
+    </div>
+
+
+    <div class="filter-group">
+      <label class="filter-label" style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+        <input type="checkbox" name="favourites_only" value="1" {% if filters.favourites_only == 1 %}checked{% endif %}>
+        <span><i class="fa-regular fa-star"></i> Favourites</span>
+      </label>
+    </div>
+
+
+    <div class="filter-group">
+      <button class="filter-btn" type="submit">Apply</button>
+      <a class="filter-btn secondary" href="/list">Clear</a>
+    </div>
+  </form>
+
+
+  <div class="results">
+    {% if chargers|length == 0 %}
+      <div class="muted">No chargers found for these filters.</div>
+    {% else %}
+      {% for c in chargers %}
+        <div class="charger-row">
+          <div>
+            <div class="charger-title">{{ c.station_name }} <span class="muted">#{{ c.pointid }}</span></div>
+            <div class="charger-sub">{{ c.address }}</div>
+          </div>
+
+
+          <div><span class="badge">€ {{ "%.4f"|format(c.kwhprice) }}/kWh</span></div>
+          <div><span class="badge">{{ c.connector }}</span></div>
+          <div><span class="badge">{{ c.power }} kW</span></div>
+
+
+         <div>
+  {% if is_logged_in %}
+    {% if c.is_favourite == 1 %}
+      <form class="star-form" method="post" action="/favourites/remove">
+        <input type="hidden" name="stationid" value="{{ c.stationid }}">
+        <button class="star-btn" title="Remove from favourites" type="submit">★</button>
+      </form>
+    {% else %}
+      <form class="star-form" method="post" action="/favourites/add">
+        <input type="hidden" name="stationid" value="{{ c.stationid }}">
+        <button class="star-btn" title="Add to favourites" type="submit">☆</button>
+      </form>
+    {% endif %}
+  {% else %}
+    <a href="{{ request.url_for('login_page') }}" class="star-btn muted" style="text-decoration: none;" title="Log in to use favourites">
+      ☆
+    </a>
+  {% endif %}
+</div>
+          <!-- "See on map" behavior: link only if backend says allowed -->
+          <div style="grid-column: 1 / -1; margin-top: 0.25rem;">
+            {% if c.can_show_on_map == 1 %}
+              <a class="muted" href="/map?stationid={{ c.stationid }}&pointid={{ c.pointid }}">See on map</a>
+            {% else %}
+              <span class="muted">Map disabled for non-current time browsing</span>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
