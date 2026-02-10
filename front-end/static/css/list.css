@@ -296,32 +296,56 @@
 }
 
 /* ---------- Favourite star ---------- */
+/* ---------- Favourite star (big, clean, safe) ---------- */
+.star-form{
+  margin: 0;
+  display: inline-flex;      /* prevents stretching */
+  flex: 0 0 auto;
+}
+
 .star-btn{
   background: none;
   border: none;
   padding: 0;
-  cursor: pointer;
+  margin: 0;
 
-  font-size: 1.35rem;
+  display: inline-flex;      /* IMPORTANT: prevents overlay bugs */
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+
+  cursor: pointer;
+  font-size: 1.85rem;        /* BIGGER STAR */
   line-height: 1;
-  color: #9ca3af;                 /* gray when not favourite */
+
+  color: #9ca3af;            /* gray when not favourite */
   transition: transform .12s ease, color .15s ease;
 }
 
 /* hover: hint that it’s clickable */
 .star-btn:hover{
-  color: #facc15;                 /* yellow */
-  transform: scale(1.15);
+  color: #facc15;            /* yellow */
+  transform: scale(1.12);
 }
 
 /* active (favourite) */
 .star-btn.on{
-  color: #facc15;                 /* solid yellow */
+  color: #facc15;            /* solid yellow */
 }
 
 /* click feedback */
 .star-btn:active{
   transform: scale(0.95);
+}
+
+/* keyboard accessibility (optional but nice) */
+.star-btn:focus{
+  outline: none;
+}
+.star-btn:focus-visible{
+  outline: 2px solid rgba(250,204,21,.45);
+  outline-offset: 3px;
+  border-radius: 6px;
 }
 
 
