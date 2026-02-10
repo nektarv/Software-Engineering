@@ -325,7 +325,7 @@ if __name__ == "__main__":
         sys.exit(1)
     
     start_time = time.time()
-    """
+
     test_get_endpoint(
         endpoint="/points",
         query_params={"status":["offline","lmao"], "format":["csv","fakeformat"]},
@@ -391,14 +391,14 @@ if __name__ == "__main__":
         check_error_logs= True,
         expected_error_logs={400:{}}
     )
-    """
+
     test_post_endpoint( 
         endpoint="/reserve/{id}/{minutes}",
         path_params={"id":["lol",20],"minutes":[45,1000]},
         payloads=[{}],
         expected_answer_type = {"pointid": int, "status": str, "reservationendtime": str},
         check_error_logs= True,
-        expected_error_logs={400:{},422:{}}
+        expected_error_logs={400:{}}
     )
 
     test_post_endpoint( 
@@ -407,10 +407,10 @@ if __name__ == "__main__":
         payloads=[{}],
         expected_answer_type = {"pointid": int, "status": str, "reservationendtime": str},
         check_error_logs= True,
-        expected_error_logs={400:{},422:{}}
+        expected_error_logs={400:{}}
     )
 
-    """
+
     test_post_endpoint(
         endpoint="/admin/addpoints",
         payloads=["./newpoints.csv"],
@@ -439,7 +439,7 @@ if __name__ == "__main__":
         },
         check_error_type=True
     )
-    """
+
     
     print("------------------------\n")
     end_time = time.time()
