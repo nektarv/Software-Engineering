@@ -22,6 +22,14 @@ from endpoints.cleanup_reservation import router as cleanup_reservation_router
 from endpoints.station import router as station_router
 
 
+from fastapi import Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from utils import build_error_log  # adjust import path
+from fastapi import FastAPI
+
+
+
 app = FastAPI()
 
 # management
@@ -47,6 +55,7 @@ app.include_router(chargers_router)
 app.include_router(favorites_router)
 app.include_router(cleanup_reservation_router)
 app.include_router(station_router)
+
 
 
 def custom_openapi():
@@ -76,6 +85,11 @@ app.openapi = custom_openapi
 @app.get("/")
 def root():
     return {"message": "EV Charging API"}
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    payload = build_error_log(request, 400, "Bad request", str(exc))
+    return JSONResponse(status_code=400, content=payload)
 
 if __name__ == "__main__":
     import uvicorn

@@ -10,7 +10,7 @@ A file-based switch is used to control which database the backend connects to.
 
 1. Recreate the test database (`charging_database_test`) using the provided SQL script /database/testing_db_creator.
 
-2. Create the flag file in the project root.
+2. Create the flag file in the testing directory.
 
 Windows:
 
