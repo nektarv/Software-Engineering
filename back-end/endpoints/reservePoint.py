@@ -31,6 +31,8 @@ async def reserve_without_minutes(
 
 # shared logic for both cases
 async def reserve(request: Request, point_id: int, minutes: int):
+    conn = None
+    cursor = None
     try:
         conn = mysql.connector.connect(**DB_CONFIG)
         cursor = conn.cursor(dictionary=True, buffered=True)
@@ -118,12 +120,18 @@ async def reserve(request: Request, point_id: int, minutes: int):
                 pass
         error = build_error_log(request, 500, "Internal server error", str(e))
         return JSONResponse(status_code=500, content=error)
-        
+       
     finally:
-        if cursor:
-            cursor.close()
-        if conn and conn.is_connected():
-            conn.close()
+        if cursor is not None:
+            try:
+                cursor.close()
+            except:
+                pass
+        if conn is not None and conn.is_connected():
+            try:
+                conn.close()
+            except:
+                pass
 
 
 
@@ -147,6 +155,8 @@ async def reserve_custom(
     minutes: int = Path(..., ge=1),
     user_id: int = Path(..., ge=1)
 ):
+    conn = None
+    cursor = None
     try:
         conn = mysql.connector.connect(**DB_CONFIG)
         cursor = conn.cursor(dictionary=True, buffered=True)
@@ -213,5 +223,13 @@ async def reserve_custom(
         error = build_error_log(request, 500, "Internal server error", str(e))
         return JSONResponse(status_code=500, content=error)
     finally:
-        if cursor: cursor.close()
-        if conn and conn.is_connected(): conn.close()
+        if cursor:
+            try:
+                cursor.close()
+            except:
+                pass
+        if conn and conn.is_connected():
+            try:
+                conn.close()
+            except:
+                pass

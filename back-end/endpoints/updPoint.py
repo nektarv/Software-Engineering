@@ -19,7 +19,9 @@ async def update_point(
     point_id: int = Path(..., ge=1),
     update_data: UpdatePointRequest = Body(...),
     request: Request = None
-):    
+):
+    conn = None
+    cursor = None    
     try:
         conn = mysql.connector.connect(**DB_CONFIG)
         cursor = conn.cursor(dictionary=True, buffered=True)
@@ -127,5 +129,5 @@ async def update_point(
     finally:
         if cursor:
             cursor.close()
-        if conn and conn.is_connected():
+        if conn is not None and conn.is_connected():
             conn.close()
