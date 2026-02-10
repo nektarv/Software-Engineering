@@ -63,9 +63,9 @@ def update_db():
         
         # Command: Delete everything BEFORE "Yesterday midnight"
         # CURDATE() = Today 00:00
-        # INTERVAL 1 DAY = One day back (Yesterday 00:00)
-        # Therefore it keeps: Yesterday, Today, Tomorrow.
-        cleanup_sql = "DELETE FROM dam_prices WHERE timeref < DATE_SUB(CURDATE(), INTERVAL 1 DAY)"
+        # INTERVAL 2 DAY = 2 days back (Day before yesterday 00:00)
+        # Therefore it keeps: Day before yesterday, Yesterday, Today, Tomorrow.
+        cleanup_sql = "DELETE FROM dam_prices WHERE timeref < DATE_SUB(CURDATE(), INTERVAL 2 DAY)"
         
         cursor.execute(cleanup_sql)
         deleted_count = cursor.rowcount
