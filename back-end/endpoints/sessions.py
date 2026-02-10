@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 
 from utils import DB_CONFIG, build_error_log
 
-router = APIRouter(prefix="/api", tags=["functional"])
+router = APIRouter(prefix="/api", tags=["sessions"])
 
 
 def _rows_to_csv(rows, header):

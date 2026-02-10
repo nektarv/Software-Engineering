@@ -7,7 +7,7 @@ from typing import Optional
 
 from utils import DB_CONFIG, build_error_log
 
-router = APIRouter(prefix="/api", tags=["functional"])
+router = APIRouter(prefix="/api", tags=["sessions"])
 
 class SessionRequest(BaseModel):
     pointid: int

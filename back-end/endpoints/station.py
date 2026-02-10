@@ -5,7 +5,7 @@ from datetime import datetime
 
 from utils import DB_CONFIG, build_error_log
 
-router = APIRouter(prefix="/api", tags=["functional"])
+router = APIRouter(prefix="/api", tags=["map/list/filters"])
 
 ALLOWED_STATUSES = {"available", "charging", "reserved", "malfunction", "offline"}
 

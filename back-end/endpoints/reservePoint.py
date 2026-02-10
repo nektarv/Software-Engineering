@@ -5,7 +5,7 @@ import mysql.connector
 
 from utils import DB_CONFIG, build_error_log
 
-router = APIRouter(prefix="/api", tags=["functional"])
+router = APIRouter(prefix="/api", tags=["reservation"])
 
 ALLOWED_STATUSES = {"available", "charging", "reserved", "malfunction", "offline"}
 

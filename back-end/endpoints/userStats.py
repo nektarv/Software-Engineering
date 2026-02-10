@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import mysql.connector
 from utils import DB_CONFIG, build_error_log
 
-router = APIRouter(prefix="/api/user", tags=["use cases"])
+router = APIRouter(prefix="/api/user", tags=["statistics"])
 
 @router.get("/statistics")
 async def get_user_statistics(
