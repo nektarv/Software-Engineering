@@ -27,8 +27,6 @@ CREATE TABLE IF NOT EXISTS `charging_database`.`provider` (
   PRIMARY KEY (`name`))
 ENGINE = InnoDB;
 
-INSERT INTO provider (name, password, email_address)
-VALUES ('ElectroWay', 'electro_dummy', 'info@electroway.gr');
 -- -----------------------------------------------------
 -- Table `charging_database`.`dam_prices`
 -- -----------------------------------------------------
@@ -235,12 +233,6 @@ CREATE TABLE IF NOT EXISTS `charging_database`.`errorcodes` (
   PRIMARY KEY (`code`)
 ) ENGINE = InnoDB;
 
-INSERT INTO `charging_database`.`errorcodes` (code, description) VALUES
-  (200, 'Success'),
-  (204, 'No content'),
-  (400, 'Bad request'),
-  (404, 'Not found'),
-  (500, 'Internal server error');
 
 
 SET SQL_MODE=@OLD_SQL_MODE;
