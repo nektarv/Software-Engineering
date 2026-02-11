@@ -1,7 +1,12 @@
 import json
 from pathlib import Path
 import mysql.connector
-from decimal import Decimal
+import random
+from decimal import Decimal, ROUND_HALF_UP
+
+def random_markup(min_val=1.05, max_val=1.30):
+    value = Decimal(str(random.uniform(min_val, max_val)))
+    return value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 CONNECTOR_MAP = {
     2: "J-1772", 3: "CHAdeMO", 7: "Type 2", 8: "Type 3A", 10: "Wall (Euro)",
@@ -81,11 +86,12 @@ def insert_from_json(conn, cursor, json_path: Path, max_locations: int = None):
                     connector = CONNECTOR_MAP.get(connector_id, f"connector{connector_id}")
                     power = safe_int(out.get("kilowatts"))
                     state = map_status(out.get("status", "offline"))
-                    
+                    markup = random_markup()
+
                     cursor.execute("""
                         INSERT INTO outlet (stationid, connector, power, state, is_fast, markup) 
                         VALUES (%s, %s, %s, %s, %s, %s)
-                    """, (station_id, connector, power, state, is_fast, 1.0))
+                    """, (station_id, connector, power, state, is_fast, markup))
         
         except Exception as e:
             print(f"Error inserting station {idx}: {e}")
