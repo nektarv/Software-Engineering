@@ -27,6 +27,8 @@ CREATE TABLE IF NOT EXISTS `charging_database`.`provider` (
   PRIMARY KEY (`name`))
 ENGINE = InnoDB;
 
+INSERT INTO provider (name, password, email_address)
+VALUES ('ElectroWay', 'electro_dummy', 'info@electroway.gr');
 -- -----------------------------------------------------
 -- Table `charging_database`.`dam_prices`
 -- -----------------------------------------------------
