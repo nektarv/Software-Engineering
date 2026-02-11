@@ -6,7 +6,7 @@ The goal of this project was to design and implement software for a provider of 
 This repository contains the source code, documentation, and artifacts produced during the project.
 
 ## 📋 Project Management
-We used github projects to organize our work - https://github.com/orgs/ntua/projects/298
+We used Github Projects to organize our work - https://github.com/orgs/ntua/projects/298
 
 ## 📁 Project Structure
 
