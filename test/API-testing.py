@@ -322,7 +322,9 @@ if __name__ == "__main__":
     
     if not os.path.exists(".USE_TEST_DB"):
         print("NOT CONNECTED TO TESTING DATABASE - SEE /testing/README.txt")
-        sys.exit(1)
+        choice = input("Are you sure you want to continue? (y/n): ").strip().lower()    
+        if choice == "n":
+            sys.exit(1)
     
     start_time = time.time()
 
