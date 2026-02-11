@@ -8,7 +8,6 @@ This repository contains the source code, documentation, and artifacts produced 
 ## 📁 Project Structure
 
 ### /back-end
-Contains:
 - API endpoints (/endpoints and /management)
 - additional endpoints for backend operations
 
