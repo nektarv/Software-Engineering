@@ -11,13 +11,11 @@ This repository contains the source code, documentation, and artifacts produced 
 - API endpoints (/endpoints and /management)
 - additional endpoints for backend operations
 
-
 ### /cli-client
 - CLI implementation
 - CLI testing script (/cli-client)
 
 ### /database
-Contains:
 - database structure
 - dummy data
 - ER diagram
