@@ -135,12 +135,12 @@ for session_id in range(1, N_SESSIONS + 1):
     startsoc = random.randint(0, 50)
     endsoc = random.randint(startsoc+1, 100)
     totalkwh = round(random.uniform(5, 50), 2)
-    kwprice = round(random.uniform(0.2, 0.5), 2)
-    amount = round(totalkwh * kwprice, 2)
+    kwhprice = round(random.uniform(0.2, 0.5), 2)
+    amount = round(totalkwh * kwhprice, 2)
     
     print(
-        "INSERT INTO sessions (starttime, endtime, startsoc, endsoc, totalkwh, kwprice, amount, pointid) "
-        f"VALUES ('{starttime}', '{endtime}', {startsoc}, {endsoc}, {totalkwh}, {kwprice}, {amount}, {point_id});"
+        "INSERT INTO sessions (starttime, endtime, startsoc, endsoc, totalkwh, kwhprice, amount, pointid) "
+        f"VALUES ('{starttime}', '{endtime}', {startsoc}, {endsoc}, {totalkwh}, {kwhprice}, {amount}, {point_id});"
     )
   
 print()

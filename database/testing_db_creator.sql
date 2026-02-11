@@ -136,7 +136,7 @@ CREATE TABLE IF NOT EXISTS `charging_database_test`.`sessions` (
   `startsoc` INT NULL DEFAULT 0,
   `endsoc` INT NULL DEFAULT 100,
   `totalkwh` FLOAT NULL,
-  `kwprice` FLOAT NULL,
+  `kwhprice` FLOAT NULL,
   `amount` FLOAT NULL,
   `pointid` INT NOT NULL,
   PRIMARY KEY (`sessionid`),

@@ -59,7 +59,7 @@ def get_sessions(
               startsoc,
               endsoc,
               totalkwh,
-              kwprice,
+              kwhprice,
               amount,
               pointid
             FROM sessions
@@ -85,7 +85,7 @@ def get_sessions(
             return Response(status_code=204)
 
         if format == "csv":
-            header = ["sessionid", "starttime", "endtime", "startsoc", "endsoc", "totalkwh", "kwprice", "amount", "pointid"]
+            header = ["sessionid", "starttime", "endtime", "startsoc", "endsoc", "totalkwh", "kwhprice", "amount", "pointid"]
             csv_text = _rows_to_csv(rows, header)
             return PlainTextResponse(content=csv_text, media_type="text/csv; charset=utf-8")
 

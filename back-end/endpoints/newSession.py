@@ -157,7 +157,7 @@ async def new_session(
         # insert session
         cursor.execute("""
             INSERT INTO sessions 
-            (starttime, endtime, startsoc, endsoc, totalkwh, kwprice, amount, pointid) 
+            (starttime, endtime, startsoc, endsoc, totalkwh, kwhprice, amount, pointid) 
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         """, (
             start_dt,
