@@ -5,7 +5,7 @@ import os
 import os
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-FLAG_FILE = os.path.join(BASE_DIR, "testing", ".USE_TEST_DB")
+FLAG_FILE = os.path.join(BASE_DIR, "test", ".USE_TEST_DB")
 
 DB_NAME = "charging_database_test" if os.path.exists(FLAG_FILE) else "charging_database"
 #DB_NAME = "charging_database"
