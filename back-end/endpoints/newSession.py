@@ -138,7 +138,7 @@ async def new_session(
                 AND sessionid IS NULL
             ORDER BY reservationtime DESC
             LIMIT 1
-        """, (session_data.pointid, start_dt, end_dt))
+        """, (session_data.pointid, start_dt, start_dt))
         
         reservation = cursor.fetchone()
         
