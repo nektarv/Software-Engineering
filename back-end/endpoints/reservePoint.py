@@ -10,7 +10,8 @@ router = APIRouter(prefix="/api", tags=["reservation"])
 ALLOWED_STATUSES = {"available", "charging", "reserved", "malfunction", "offline"}
 
 MAX_MINUTES = 60
-MIN_MINUTES = 1   # either 30 or 1
+MIN_MINUTES = 30   
+MIN_MINUTES_FRONTEND = 1
 
 # user specified mins
 @router.post("/reserve/{point_id}/{minutes}")
@@ -171,7 +172,7 @@ async def reserve_custom(
 
         status = point['state']
 
-        if (minutes < MIN_MINUTES) or (status != 'available'):
+        if (minutes < MIN_MINUTES_FRONTEND) or (status != 'available'):
             return {
                 "pointid": str(point_id), # Επιστρέφουμε string για τυπικότητα
                 "status": status,
