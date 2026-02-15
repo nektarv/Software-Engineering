@@ -17,9 +17,6 @@ On a separate terminal, navigate to .../softeng25-34/front-end and run the follo
 You may access the app at:
 https://localhost:8000 or https://0.0.0.0:8000
 
-## 📋 Project Management
-We used Github Projects to organize our work - https://github.com/orgs/ntua/projects/298
-
 ## 📁 Project Structure
 
 ### /back-end
