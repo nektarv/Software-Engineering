@@ -5,6 +5,18 @@ ElectroWay is a university Software Engineering project developed for the **Soft
 The goal of this project was to design and implement software for a provider of EV charging stations.
 This repository contains the source code, documentation, and artifacts produced during the project.
 
+## 🖼️ Screenshots
+
+### Charger Map and Reservation
+![Map Page](images/map.png)
+
+### Charger Filters
+![Filters Page](images/filters.png)
+
+### User Statistics
+![Statistics Page 1](images/statistics-1.png)
+![Statistics Page 2](images/statistics-2.png)
+
 ## 🧭 Run the Software - A short guide
 On a terminal, navigate to .../back-end and run the following command:
 
