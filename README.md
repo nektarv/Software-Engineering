@@ -1,11 +1,11 @@
 # ⚡ ElectroWay
 ElectroWay is a university Software Engineering project developed for the **Software Engineering** course, at the **School of Electrical and Computer Engineering, NTUA**.
 
-## 📌 Project Description
+## Project Description
 The goal of this project was to design and implement software for a provider of EV charging stations.
 This repository contains the source code, documentation, and artifacts produced during the project.
 
-## 🖼️ Screenshots
+## Screenshots
 
 ### Charger Map and Reservation
 ![Map Page](images/map.png)
@@ -17,7 +17,7 @@ This repository contains the source code, documentation, and artifacts produced 
 ![Statistics Page 1](images/statistics-1.png)
 ![Statistics Page 2](images/statistics-2.png)
 
-## 🧭 Run the Software - A short guide
+## Run the Software - A short guide
 On a terminal, navigate to .../back-end and run the following command:
 
 - uvicorn main:app --host 0.0.0.0 --port 9876 --ssl-keyfile key.pem --ssl-certfile cert.pem --reload
@@ -29,7 +29,7 @@ On a separate terminal, navigate to .../front-end and run the following command:
 You may access the app at:
 https://localhost:8000 or https://0.0.0.0:8000
 
-## 📁 Project Structure
+## Project Structure
 
 ### /back-end
 - API endpoints (/endpoints and /management)
